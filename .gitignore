@@ -1,0 +1,12 @@
+*.exe
+*.dll 
+*.ilk
+*.pdb
+*.exp
+*.obj
+*.so
+*.o
+*.a
+*.lib
+bin/.vs
+tags

@@ -2,6 +2,8 @@
 #include "utils.h"
 //#include "sound.h"
 
+namespace rf {
+
 bool static FramePressedKeys[350] = {};
 bool static FrameReleasedKeys[350] = {};
 bool static FrameDownKeys[350] = {};
@@ -164,7 +166,7 @@ namespace ctx {
         if(Context && GLFWValid)
         {
             char WindowName[64];
-            snprintf(WindowName, 64, "Radar v%d.%d.%d", RADAR_MAJOR, RADAR_MINOR, RADAR_PATCH);
+            snprintf(WindowName, 64, "Radar v%d.%d.%d", RF_MAJOR, RF_MINOR, RF_PATCH);
 
             glfwSetErrorCallback(ProcessErrorEvent);
 #if 0
@@ -390,4 +392,5 @@ namespace ctx {
         glPolygonMode(GL_FRONT_AND_BACK, Context->WireframeMode ? GL_LINE : GL_FILL);
         return CurrWireframe;
     }
+}
 }

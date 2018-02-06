@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "context.h"
 
+namespace rf {
 void ConcatStrings(path Dst, path const Str1, path const Str2)
 {
     strncpy(Dst, Str1, MAX_PATH);
@@ -145,7 +146,7 @@ uint16 UTF8CharToInt(char const *Str, size_t *CharAdvance)
 }
 
 /// Platform dependent functions
-#ifdef RADAR_WIN32
+#ifdef RF_WIN32
 // NOTE : expect a MAX_PATH string as Path
 void GetExecutablePath(path Path)
 {
@@ -169,7 +170,7 @@ void PlatformSleep(uint32 MillisecondsToSleep)
     Sleep(MillisecondsToSleep);
 }
 #else
-#ifdef RADAR_UNIX
+#ifdef RF_UNIX
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -178,7 +179,7 @@ void PlatformSleep(uint32 MillisecondsToSleep)
 #include <fcntl.h>
 
 // NOTE : expect a MAX_PATH string as Path
-bool GetExecutablePath(path Path)
+void GetExecutablePath(path Path)
 {
     struct stat Info;
     path StatProc;
@@ -189,7 +190,7 @@ bool GetExecutablePath(path Path)
     if(-1 == BytesRead)
     {
         printf("Fatal Error : Can't query Executable path.\n");
-        return false;
+        return;;
     }
 
     Path[BytesRead] = 0;
@@ -199,8 +200,6 @@ bool GetExecutablePath(path Path)
 
     // Null-terminate the string at that position before returning
     Path[NumChar] = 0;
-
-    return true;
 }
 
 static void CopyFile(path const Src, path const Dst)
@@ -242,4 +241,5 @@ void PlatformSleep(uint32 MillisecondsToSleep)
     nanosleep(&TS, NULL);
 }
 #endif
+}
 #endif

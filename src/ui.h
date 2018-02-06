@@ -4,6 +4,7 @@
 #include "context.h"
 #include "fontawesome.h"
 
+namespace rf {
 // NOTE - Maybe parameterize this somewhere
 #define UI_TITLEBAR_HEIGHT 20
 #define UI_BORDER_WIDTH 1
@@ -45,5 +46,6 @@ namespace ui {
 
     void MakeText(void *ID, char const *Text, theme_font FontStyle, vec2i PositionOffset, theme_color Color, real32 FontScale = 1.f, int MaxWidth = 2000);
     void MakeText(void *ID, char const *Text, theme_font FontStyle, vec2i PositionOffset, col4f const &Color, real32 FontScale = 1.f, int MaxWidth = 2000);
+}
 }
 #endif

@@ -6,20 +6,20 @@
 #include <vector>
 #include "linmath.h"
 
-#define RADAR_MAJOR 0
-#define RADAR_MINOR 0
-#define RADAR_PATCH 1
+#define RF_MAJOR 0
+#define RF_MINOR 0
+#define RF_PATCH 1
 
 // Platform
 #if defined(_WIN32) || defined(_WIN64)
-#   define RADAR_WIN32 1
+#   define RF_WIN32 1
 #ifdef LIBEXPORT
 #   define DLLEXPORT extern "C" __declspec(dllexport)
 #else
 #   define DLLEXPORT
 #endif
 #elif defined(__unix__) || defined (__unix) || defined(unix)
-#   define RADAR_UNIX 1
+#   define RF_UNIX 1
 #   define DLLEXPORT extern "C"
 #   include <stddef.h>
 #else

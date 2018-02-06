@@ -6,6 +6,7 @@
 #include "stb_truetype.h"
 #include "fontawesome.h"
 
+namespace rf {
 static resource_store *GetStore(render_resources *RenderResources, render_resource_type Type)
 {
     switch(Type)
@@ -1600,6 +1601,6 @@ uint32 PrecomputeGGXLUT(context *Context, uint32 Width)
     
     return GGXLUT;
 }
-
+}
 // ADDITIONAL IMPLEMENTATION
 #include "model.cpp"

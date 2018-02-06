@@ -10,6 +10,7 @@
 #endif
 #include "GLFW/glfw3.h"
 
+namespace rf {
 #define MAX_SHADERS 32
 
 struct context_descriptor
@@ -88,6 +89,6 @@ namespace ctx
     void SetCursor(context *Context, cursor_type CursorType);
     GLenum SetWireframeMode(context *Context, GLenum Mode = 0);
 }
-
+}
 
 #endif

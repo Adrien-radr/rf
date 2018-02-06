@@ -6,13 +6,14 @@
 // origin at the top left (0,0) of the window, with the bottom right (winwidth, winheight).
 /////////////////////////////////////////////////////////////////////////////////////////
 
+namespace rf {
 #define UI_STACK_SIZE Megabytes(8)
 #define UI_MAX_PANELS 32
 #define UI_PARENT_SIZE 10
 
+namespace ui {
 #include "ui_theme.cpp"
 
-namespace ui {
 static context *Context;
 static input   *Input;
 
@@ -876,5 +877,6 @@ void Draw()
     }
     glEnable(GL_DEPTH_TEST);
     glBindVertexArray(0);
+}
 }
 }

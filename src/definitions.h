@@ -3,9 +3,25 @@
 
 #include "radar_common.h"
 
-struct context;
-
 #define POOL_OFFSET(Pool, Structure) ((uint8*)(Pool) + sizeof(Structure))
+#define PushArenaStruct(Arena, Struct) _PushArenaData((Arena), sizeof(Struct))
+#define PushArenaData(Arena, Size) _PushArenaData((Arena), (Size))
+
+// TODO - See if 256 is enough for more one liner ui strings
+#define CONSOLE_CAPACITY 128
+#define CONSOLE_STRINGLEN 256
+#define UI_STRINGLEN 256
+#define UI_MAXSTACKOBJECT 256
+
+#define KEY_HIT(KeyState) ((KeyState >> 0x1) & 1)
+#define KEY_UP(KeyState) ((KeyState >> 0x2) & 1)
+#define KEY_DOWN(KeyState) ((KeyState >> 0x3) & 1)
+#define MOUSE_HIT(MouseState) KEY_HIT(MouseState)
+#define MOUSE_UP(MouseState) KEY_UP(MouseState)
+#define MOUSE_DOWN(MouseState) KEY_DOWN(MouseState)
+
+namespace rf {
+struct context;
 
 struct memory_arena
 {
@@ -29,8 +45,6 @@ inline void ClearArena(memory_arena *Arena)
     Arena->Size = 0;
 }
 
-#define PushArenaStruct(Arena, Struct) _PushArenaData((Arena), sizeof(Struct))
-#define PushArenaData(Arena, Size) _PushArenaData((Arena), (Size))
 inline void *_PushArenaData(memory_arena *Arena, uint64 Size)
 {
     Assert(Arena->Size + Size <= Arena->Capacity);
@@ -41,21 +55,8 @@ inline void *_PushArenaData(memory_arena *Arena, uint64 Size)
     return (void*)MemoryPtr;
 }
 
-// TODO - See if 256 is enough for more one liner ui strings
-#define CONSOLE_CAPACITY 128
-#define CONSOLE_STRINGLEN 256
-#define UI_STRINGLEN 256
-#define UI_MAXSTACKOBJECT 256
-
 typedef uint8 key_state;
-#define KEY_HIT(KeyState) ((KeyState >> 0x1) & 1)
-#define KEY_UP(KeyState) ((KeyState >> 0x2) & 1)
-#define KEY_DOWN(KeyState) ((KeyState >> 0x3) & 1)
-
 typedef uint8 mouse_state;
-#define MOUSE_HIT(MouseState) KEY_HIT(MouseState)
-#define MOUSE_UP(MouseState) KEY_UP(MouseState)
-#define MOUSE_DOWN(MouseState) KEY_DOWN(MouseState)
 
 // Contains all input for a frame
 struct input
@@ -164,4 +165,5 @@ struct console_log
     uint32 ReadIdx;
     uint32 StringCount;
 };
+}
 #endif

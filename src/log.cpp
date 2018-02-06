@@ -4,8 +4,8 @@
 #include "utils.h"
 #include "context.h"
 
-namespace rlog
-{
+namespace rf {
+namespace log {
     context         *Context;
 
     FILE static     *LogFile;
@@ -30,7 +30,7 @@ namespace rlog
         GetDateTime(CurrTime + 1, 63, DEFAULT_TIME_FMT);
         strncat(CurrDate + WrittenChar, CurrTime, 64);
 
-        LogInfo("Radar Engine Log v%d.%d.%d", RADAR_MAJOR, RADAR_MINOR, RADAR_PATCH );
+        LogInfo("Radar Engine Log v%d.%d.%d", RF_MAJOR, RF_MINOR, RF_PATCH );
         LogInfo("%s", CurrDate);
         LogInfo( "========================" );
     }
@@ -94,4 +94,5 @@ namespace rlog
         // CONSOLE Output
         //ConsoleLog(System->ConsoleLog, Str, CharCount);
     }
+}
 }

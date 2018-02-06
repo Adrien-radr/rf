@@ -1,8 +1,7 @@
-//#include "render.h"
-
 #define TINYGLTF_IMPLEMENTATION
 #include "tiny_gltf.h"
 
+namespace rf {
 static int GetAttribIndex(const std::string &AttribName)
 {
     if(AttribName == "POSITION") return 0;
@@ -393,4 +392,5 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
 void DestroyModel(model *Model)
 {
     // TODO
+}
 }

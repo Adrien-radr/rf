@@ -120,9 +120,8 @@ $(OBJ_DIR)%.o: $(SRC_DIR)%.cpp
 	@$(CC) $(CFLAGS) $(VERSION_FLAGS) $(INCLUDE_FLAGS) -DGLEW_STATIC -c $< -o $@
 
 rf: $(STB_TARGET) $(GLEW_TARGET) $(CJSON_TARGET) $(OBJS)
-	@echo "CC $(TARGET)"
-	#$(CC) $(CFLAGS) $(VERSION_FLAGS) -shared -fPIC -DGLEW_STATIC $(OBJS) $(INCLUDE_FLAGS) $(LIB_FLAGS) -o $(TARGET)
-	ar rcs $(TARGET) $(OBJS)
+	@echo "AR $(TARGET)"
+	@ar rcs $(TARGET) $(OBJS)
 
 endif
 #$(error OS not compatible. Only Win32 and Linux for now.)

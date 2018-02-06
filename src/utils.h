@@ -5,6 +5,7 @@
 #include "log.h"
 #include "cJSON.h"
 
+namespace rf {
 #define DEFAULT_DATE_FMT "%a %d %b %Y"
 #define DEFAULT_TIME_FMT "%H:%M:%S"
 
@@ -125,4 +126,5 @@ inline std::string JSON_Get(cJSON *Root, char const *ValueName, std::string cons
     return Ret;
 }
 
+}
 #endif

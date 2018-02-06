@@ -5,6 +5,7 @@
 #include "GL/glew.h"
 #include <map>
 
+namespace rf {
 #define MAX_FBO_ATTACHMENTS 5
 
 struct image
@@ -189,4 +190,5 @@ void            FillDisplayTextInterleaved(char const *Text, uint32 TextLength, 
                     real32 *VertData, uint16 *Indices, real32 Scale = 1.0f);
 void            FillDisplayTextInterleavedUTF8(char const *Text , uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
                     real32 *VertData, uint16 *IdxData, real32 Scale = 1.0f);
+}
 #endif

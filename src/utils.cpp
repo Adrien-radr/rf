@@ -20,6 +20,43 @@ bool DiskFileExists(path const Filename)
     return false;
 }
 
+void *ReadFileContentsNoContext(path const Filename, int32 *FileSize)
+{
+    char *Contents = NULL;
+    FILE *fp = fopen(Filename, "rb");
+
+    if(fp)
+    {
+        if(0 == fseek(fp, 0, SEEK_END))
+        {
+            int32 Size = ftell(fp);
+            rewind(fp);
+            Contents = (char*)calloc(1, Size+1);
+            size_t Read = fread(Contents, Size, 1, fp);
+            if(Read != 1)
+            {
+                LogError("File Open Error [%s] : Reading error or EOF reached.", Filename);
+            }
+            Contents[Size] = 0;
+            if(FileSize)
+            {
+                *FileSize = Size+1;
+            }
+        }
+        else
+        {
+            LogError("File Open Error [%s] : fseek not 0.", Filename);
+        }
+        fclose(fp);
+    }
+    else
+    {
+        LogError("File Open Error [%s] : Couldn't open file.", Filename);
+    }
+
+    return (void*)Contents;
+}
+
 void *ReadFileContents(context *Context, path const Filename, int32 *FileSize)
 {
     char *Contents = NULL;

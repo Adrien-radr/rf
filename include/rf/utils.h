@@ -29,6 +29,11 @@ void    DiskFileCopy(path const DstPath, path const SrcPath);
 /// Context is needed for the scratch alloc of opening the file
 void    *ReadFileContents(context *Context, path const Filename, int32 *FileSize);
 
+/// Same as previous, but doesn't necessitate the Context to call
+/// This one is LESS recommended. It allocates the receiving buffer on the heap and 
+/// the caller HAS to free it. It should only be used if the Context doesn't exist yet
+void    *ReadFileContentsNoContext(path const Filename, int32 *FileSize);
+
 /// Returns the number of byte characters that the UTF8 string is composed of
 /// If 1, it is a normal ascii string
 /// Returns -1 if the string is not UTF8

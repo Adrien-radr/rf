@@ -19,9 +19,9 @@ namespace ui {
     col4f const &GetColor(theme_color Col);
     font  *GetFont(theme_font Font);
 
-    void Init(game_memory *Memory, game_context *Context);
-    void ReloadShaders(game_memory *Memory, game_context *Context);
-    void BeginFrame(game_memory *Memory, game_input *Input);
+    void Init(context *Context);
+    void ReloadShaders(context *Context);
+    void BeginFrame(input *Input);
     void Draw();
 
     bool HasFocus();

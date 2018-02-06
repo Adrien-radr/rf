@@ -13,7 +13,7 @@ namespace rlog
         LOG_DEBUG
     };
 
-    void Init();
+    void Init(context *Context);
     void Destroy();
     void _Msg(log_level LogLevel, char const *File, int Line, char const *Fmt, ... );
 }

@@ -3,16 +3,49 @@
 
 #include "radar_common.h"
 
+struct context;
+
+#define POOL_OFFSET(Pool, Structure) ((uint8*)(Pool) + sizeof(Structure))
+
+struct memory_arena
+{
+    uint8   *BasePtr;   // Start of Arena, in bytes
+    uint64  Size;       // Used amount of memory
+    uint64  Capacity;   // Total size of arena
+};
+
+inline void InitArena(memory_arena *Arena, uint64 Capacity, void *BasePtr)
+{
+    Arena->BasePtr = (uint8*)BasePtr;
+    Arena->Capacity = Capacity;
+    Arena->Size = 0;
+}
+
+inline void ClearArena(memory_arena *Arena)
+{
+    // TODO - Do we need to wipe this to 0 each time ? Profile it to see if its
+    // a problem. It seems like best practice
+    memset(Arena->BasePtr, 0, sizeof(uint8) * Arena->Capacity);
+    Arena->Size = 0;
+}
+
+#define PushArenaStruct(Arena, Struct) _PushArenaData((Arena), sizeof(Struct))
+#define PushArenaData(Arena, Size) _PushArenaData((Arena), (Size))
+inline void *_PushArenaData(memory_arena *Arena, uint64 Size)
+{
+    Assert(Arena->Size + Size <= Arena->Capacity);
+    void *MemoryPtr = Arena->BasePtr + Arena->Size;
+    Arena->Size += Size;
+    //printf("Current ArenaSize is %llu [max %llu]\n", Arena->Size, Arena->Capacity);
+
+    return (void*)MemoryPtr;
+}
+
 // TODO - See if 256 is enough for more one liner ui strings
 #define CONSOLE_CAPACITY 128
 #define CONSOLE_STRINGLEN 256
 #define UI_STRINGLEN 256
 #define UI_MAXSTACKOBJECT 256
-
-struct resource_helper
-{
-    path ExecutablePath;
-};
 
 typedef uint8 key_state;
 #define KEY_HIT(KeyState) ((KeyState >> 0x1) & 1)
@@ -24,9 +57,8 @@ typedef uint8 mouse_state;
 #define MOUSE_UP(MouseState) KEY_UP(MouseState)
 #define MOUSE_DOWN(MouseState) KEY_DOWN(MouseState)
 
-// NOTE - Struct passed to the Game
-// Contains all frame input each frame needed by game
-struct game_input
+// Contains all input for a frame
+struct input
 {
     real64 dTime;
     real64 dTimeFixed;

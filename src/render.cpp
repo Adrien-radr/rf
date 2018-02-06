@@ -167,22 +167,18 @@ void CheckFramebufferError(char const *Mark)
     )
 }
 
-image *ResourceLoadImage(render_resources *RenderResources, path const Filename, bool IsFloat, bool FlipY, int32 ForceNumChannel)
+image *ResourceLoadImage(context *Context, path const Filename, bool IsFloat, bool FlipY, int32 ForceNumChannel)
 {
     path ResourceName;
-    MakeRelativePath(RenderResources->RH, ResourceName, Filename);
-    void *LoadedResource = ResourceCheckExist(RenderResources, RESOURCE_IMAGE, Filename);
+    ConcatStrings(ResourceName, ctx::GetExePath(Context), Filename);
+    void *LoadedResource = ResourceCheckExist(&Context->RenderResources, RESOURCE_IMAGE, Filename);
 
     if(LoadedResource)
     {
         return (image*)LoadedResource;
     }
 
-    // TODO - TODO - TODO
-    image *Image = NULL;
-#if 0
-    game_memory *Memory = RenderResources->RH->Memory;
-    image *Image = (image*)PushArenaStruct(&Memory->SessionArena, image);
+    image *Image = (image*)PushArenaStruct(Context->SessionArena, image);
     stbi_set_flip_vertically_on_load(FlipY ? 1 : 0); // NOTE - Flip Y so textures are Y-descending
 
     if(IsFloat)
@@ -196,8 +192,8 @@ image *ResourceLoadImage(render_resources *RenderResources, path const Filename,
         return NULL;
     }
 
-    ResourceStore(RenderResources, RESOURCE_IMAGE, Filename, Image);
-#endif
+    ResourceStore(&Context->RenderResources, RESOURCE_IMAGE, Filename, Image);
+
     return Image;
 }
 
@@ -331,29 +327,25 @@ void BindTexture3D(uint32 TextureID, uint32 TextureUnit)
     glBindTexture(GL_TEXTURE_3D, TextureID);
 }
 
-uint32 *ResourceLoad2DTexture(render_resources *RenderResources, path const Filename, bool IsFloat, bool FloatHalfPrecision,
+uint32 *ResourceLoad2DTexture(context *Context, path const Filename, bool IsFloat, bool FloatHalfPrecision,
                               uint32 AnisotropicLevel, int MagFilter, int MinFilter, int WrapS, int WrapT, int32 ForceNumChannel)
 {
-    void *LoadedResource = ResourceCheckExist(RenderResources, RESOURCE_TEXTURE, Filename);
+    void *LoadedResource = ResourceCheckExist(&Context->RenderResources, RESOURCE_TEXTURE, Filename);
     if(LoadedResource)
     {
         return (uint32*)LoadedResource;
     }
 
-    // TODO - TODO - TODO
-    uint32 *Tex = NULL;
-#if 0
-    game_memory *Memory = RenderResources->RH->Memory;
-    uint32 *Tex = (uint32*)PushArenaStruct(&Memory->SessionArena, uint32);
-    *Tex = Make2DTexture(ResourceLoadImage(RenderResources, Filename, IsFloat, ForceNumChannel),
+    uint32 *Tex = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
+    *Tex = Make2DTexture(ResourceLoadImage(Context, Filename, IsFloat, ForceNumChannel),
                          IsFloat, FloatHalfPrecision, AnisotropicLevel, MagFilter, MinFilter, WrapS, WrapT);
 
-    ResourceStore(RenderResources, RESOURCE_TEXTURE, Filename, Tex);
-#endif
+    ResourceStore(&Context->RenderResources, RESOURCE_TEXTURE, Filename, Tex);
+
     return Tex;
 }
 
-uint32 MakeCubemap(render_resources *RenderResources, path *Paths, bool IsFloat, bool FloatHalfPrecision, uint32 Width, uint32 Height, bool MakeMipmap)
+uint32 MakeCubemap(context *Context, path *Paths, bool IsFloat, bool FloatHalfPrecision, uint32 Width, uint32 Height, bool MakeMipmap)
 {
     uint32 Cubemap = 0;
 
@@ -365,7 +357,7 @@ uint32 MakeCubemap(render_resources *RenderResources, path *Paths, bool IsFloat,
     { // Load each face
         if(Paths)
         { // For loading from texture files
-            image *Face = ResourceLoadImage(RenderResources, Paths[i], IsFloat);
+            image *Face = ResourceLoadImage(Context, Paths[i], IsFloat);
 
             GLint BaseFormat, Format;
             FormatFromChannels(Face->Channels, IsFloat, FloatHalfPrecision, &BaseFormat, &Format);
@@ -490,32 +482,26 @@ void FramebufferAttachBuffer(frame_buffer *FB, uint32 Attachment, uint32 Channel
 
 // TODO - This method isn't perfect. Some letters have KERN advance between them when in sentences.
 // This doesnt take it into account since we bake each letter separately for future use by texture lookup
-font *ResourceLoadFont(render_resources *RenderResources, path const Filename, uint32 FontHeight, int Char0, int CharN)
+font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight, int Char0, int CharN)
 {
-    font *Font = NULL;
-    return Font;
-    // TODO - TODO - TODO
-#if 0
-    game_memory *Memory = RenderResources->RH->Memory;
-
     if(FontHeight >= 1000) FontHeight = 999; // be realist..
     real32 PixelHeight = (real32)FontHeight;
 
-    path *ResourceName = (path*)PushArenaData(&Memory->SessionArena, MAX_PATH);
+    path ResourceName;
     uint32 FilenameLen = strlen(Filename);
     Assert(FilenameLen < (MAX_PATH-4));
-    strncpy(*ResourceName, Filename, FilenameLen); // to add the 3 size characters + \0
-    sprintf(*ResourceName + FilenameLen, "%d", (int32)FontHeight);
+    strncpy(ResourceName, Filename, FilenameLen); // to add the 3 size characters + \0
+    sprintf(ResourceName + FilenameLen, "%d", (int32)FontHeight);
 
-    void *LoadedResource = ResourceCheckExist(RenderResources, RESOURCE_FONT, *ResourceName);
+    void *LoadedResource = ResourceCheckExist(&Context->RenderResources, RESOURCE_FONT, ResourceName);
     if(LoadedResource)
     {
         return (font*)LoadedResource;
     }
 
-    font *Font = (font*)PushArenaStruct(&Memory->SessionArena, font);
+    font *Font = (font*)PushArenaStruct(Context->SessionArena, font);
 
-    void *Contents = ReadFileContents(&Memory->ScratchArena, Filename, 0);
+    void *Contents = ReadFileContents(Context, Filename, 0);
     if(Contents)
     {
         stbtt_fontinfo STBFont;
@@ -532,8 +518,8 @@ font *ResourceLoadFont(render_resources *RenderResources, path const Filename, u
         Font->NumGlyphs = STBFont.numGlyphs;
         Font->Char0 = Char0;
         Font->CharN = CharN;
-        Font->Buffer = (uint8*)PushArenaData(&Memory->SessionArena, Font->Width*Font->Height);
-        Font->Glyphs = (glyph*)PushArenaData(&Memory->SessionArena, sizeof(glyph) * (Font->CharN - Font->Char0));
+        Font->Buffer = (uint8*)PushArenaData(Context->SessionArena, Font->Width*Font->Height);
+        Font->Glyphs = (glyph*)PushArenaData(Context->SessionArena, sizeof(glyph) * (Font->CharN - Font->Char0));
         Font->LineGap = Ascent - Descent;
         Font->Ascent = Ascent;
         Font->MaxGlyphWidth = 0;
@@ -588,13 +574,12 @@ font *ResourceLoadFont(render_resources *RenderResources, path const Filename, u
                              GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     }
 
-    ResourceStore(RenderResources, RESOURCE_FONT, *ResourceName, Font);
+    ResourceStore(&Context->RenderResources, RESOURCE_FONT, ResourceName, Font);
 
     return Font;
-#endif
 }
 
-uint32 _CompileShader(char *Src, int Type)
+uint32 _CompileShader(context *Context, char *Src, int Type)
 {
     GLuint Shader = glCreateShader(Type);
 
@@ -609,7 +594,7 @@ uint32 _CompileShader(char *Src, int Type)
         GLint Len;
         glGetShaderiv(Shader, GL_INFO_LOG_LENGTH, &Len);
 
-        GLchar *Log = (GLchar*) calloc(1, Len);
+        GLchar *Log = (GLchar*) ctx::AllocScratch(Context, Len);
         glGetShaderInfoLog(Shader, Len, NULL, Log);
 
         LogError("Shader Compilation Error\n"
@@ -623,16 +608,16 @@ uint32 _CompileShader(char *Src, int Type)
     return Shader;
 }
 
-uint32 BuildShader(char *VSPath, char *FSPath, char *GSPath)
+uint32 BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath)
 {
     char *VSrc = NULL, *FSrc = NULL, *GSrc = NULL;
 
-    VSrc = (char*)ReadFileContents(VSPath, 0);
-    FSrc = (char*)ReadFileContents(FSPath, 0);
+    VSrc = (char*)ReadFileContents(Context, VSPath, 0);
+    FSrc = (char*)ReadFileContents(Context, FSPath, 0);
 
     if(GSPath)
     {
-        GSrc = (char*)ReadFileContents(GSPath, 0);
+        GSrc = (char*)ReadFileContents(Context, GSPath, 0);
     }
 
     uint32 ProgramID = 0;
@@ -642,14 +627,14 @@ uint32 BuildShader(char *VSPath, char *FSPath, char *GSPath)
     {
         ProgramID = glCreateProgram();
 
-        uint32 VShader = _CompileShader(VSrc, GL_VERTEX_SHADER);
+        uint32 VShader = _CompileShader(Context, VSrc, GL_VERTEX_SHADER);
         if(!VShader)
         {
             LogError("Failed to build %s Vertex Shader.", VSPath);
             glDeleteProgram(ProgramID);
             return 0;
         }
-        uint32 FShader = _CompileShader(FSrc, GL_FRAGMENT_SHADER);
+        uint32 FShader = _CompileShader(Context, FSrc, GL_FRAGMENT_SHADER);
         if(!VShader)
         {
             LogError("Failed to build %s Vertex Shader.", VSPath);
@@ -661,7 +646,7 @@ uint32 BuildShader(char *VSPath, char *FSPath, char *GSPath)
         uint32 GShader = 0;
         if(GSPath)
         {
-            GShader = _CompileShader(GSrc, GL_GEOMETRY_SHADER);
+            GShader = _CompileShader(Context, GSrc, GL_GEOMETRY_SHADER);
             if(!GShader)
             {
                 LogError("Failed to build %s Geometry Shader.", GSPath);
@@ -693,7 +678,7 @@ uint32 BuildShader(char *VSPath, char *FSPath, char *GSPath)
             GLint Len;
             glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &Len);
 
-            GLchar *Log = (GLchar*) calloc(1, Len);
+            GLchar *Log = (GLchar*) ctx::AllocScratch(Context, Len);
             glGetProgramInfoLog(ProgramID, Len, NULL, Log);
 
             LogError("Shader Program link error : \n"
@@ -701,15 +686,10 @@ uint32 BuildShader(char *VSPath, char *FSPath, char *GSPath)
                     "%s"
                     "-----------------------------------------------------", Log);
 
-            free(Log);
             glDeleteProgram(ProgramID);
             return 0;
         }
     }
-
-    if(VSrc) free(VSrc);
-    if(FSrc) free(FSrc);
-    if(GSrc) free(GSrc);
 
     return ProgramID;
 }
@@ -952,7 +932,7 @@ real32 GetDisplayTextWidth(char const *Text, font *Font, real32 Scale)
     return TextWidth;
 }
 
-display_text MakeDisplayText(font *Font, char const *Msg, int MaxPixelWidth, vec4f Color, real32 Scale = 1.0f)
+display_text MakeDisplayText(context *Context, font *Font, char const *Msg, int MaxPixelWidth, vec4f Color, real32 Scale = 1.0f)
 {
     display_text Text = {};
 
@@ -963,9 +943,9 @@ display_text MakeDisplayText(font *Font, char const *Msg, int MaxPixelWidth, vec
     uint32 PS = 4 * 3;
     uint32 TS = 4 * 2;
 
-    real32 *Positions = (real32*)calloc(1, 3 * VertexCount * sizeof(real32));
-    real32 *Texcoords = (real32*)calloc(1, 2 * VertexCount * sizeof(real32));
-    uint32 *Indices = (uint32*)calloc(1, IndexCount * sizeof(uint32));
+    real32 *Positions = (real32*)ctx::AllocScratch(Context, 3 * VertexCount * sizeof(real32));
+    real32 *Texcoords = (real32*)ctx::AllocScratch(Context, 2 * VertexCount * sizeof(real32));
+    uint32 *Indices = (uint32*)ctx::AllocScratch(Context, IndexCount * sizeof(uint32));
 
     int X = 0, Y = 0;
     for(uint32 i = 0; i < MsgLength; ++i)
@@ -1232,7 +1212,7 @@ mesh Make2DQuad(vec2i Start, vec2i End)
     return Quad;
 }
 
-mesh Make3DPlane(vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic)
+mesh Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic)
 {
     mesh Plane = {};
 
@@ -1243,11 +1223,11 @@ mesh Make3DPlane(vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount
     size_t IndicesSize = 6 * BaseSize * sizeof(uint32);
     size_t TangentsSize = 4 * BaseSize * sizeof(vec4f);
 
-    vec3f *Positions = (vec3f*)calloc(1, PositionsSize);
-    vec3f *Normals = (vec3f*)calloc(1, NormalsSize);
-    vec2f *Texcoords = (vec2f*)calloc(1, TexcoordsSize);
-    vec4f *Tangents = (vec4f*)calloc(1, TangentsSize);
-    uint32 *Indices = (uint32*)calloc(1, IndicesSize);
+    vec3f *Positions = (vec3f*)ctx::AllocScratch(Context, PositionsSize);
+    vec3f *Normals = (vec3f*)ctx::AllocScratch(Context, NormalsSize);
+    vec2f *Texcoords = (vec2f*)ctx::AllocScratch(Context, TexcoordsSize);
+    vec4f *Tangents = (vec4f*)ctx::AllocScratch(Context, TangentsSize);
+    uint32 *Indices = (uint32*)ctx::AllocScratch(Context, IndicesSize);
 
     vec2i SubdivDim = Dimension / Subdivisions;
     vec2f TexMax = Dimension / (real32)TextureRepeatCount;
@@ -1417,12 +1397,9 @@ mesh MakeUnitSphere(bool MakeAdditionalAttribs, float TexScale)
     return Sphere;
 }
 
-void ComputeIrradianceCubemap(render_resources *RenderResources, char const *HDREnvmapFilename,
+void ComputeIrradianceCubemap(context *Context, char const *HDREnvmapFilename,
         uint32 *HDRCubemapEnvmap, uint32 *HDRGlossyEnvmap, uint32 *HDRIrradianceEnvmap)
 {
-    // TODO - TODO - TODO
-#if 0
-    game_memory *Memory = RenderResources->RH->Memory;
     // TODO - Parameterize this ?
     uint32 CubemapWidth = 512;
     uint32 IrradianceCubemapWidth = 32;
@@ -1434,28 +1411,28 @@ void ComputeIrradianceCubemap(render_resources *RenderResources, char const *HDR
 
     path VSPath;
     path FSPath;
-    MakeRelativePath(RenderResources->RH, VSPath, "data/shaders/skybox_vert.glsl");
-    MakeRelativePath(RenderResources->RH, FSPath, "data/shaders/latlong2cubemap_frag.glsl");
-    ProgramLatlong2Cubemap = BuildShader(Memory, VSPath, FSPath);
+    ConcatStrings(VSPath, ctx::GetExePath(Context), "data/shaders/skybox_vert.glsl");
+    ConcatStrings(FSPath, ctx::GetExePath(Context), "data/shaders/latlong2cubemap_frag.glsl");
+    ProgramLatlong2Cubemap = BuildShader(Context, VSPath, FSPath);
     glUseProgram(ProgramLatlong2Cubemap);
     SendInt(glGetUniformLocation(ProgramLatlong2Cubemap, "Envmap"), 0);
     CheckGLError("Latlong Shader");
 
-    MakeRelativePath(RenderResources->RH, FSPath, "data/shaders/cubemapconvolution_frag.glsl");
-    ProgramCubemapConvolution = BuildShader(Memory, VSPath, FSPath);
+    ConcatStrings(FSPath, ctx::GetExePath(Context), "data/shaders/cubemapconvolution_frag.glsl");
+    ProgramCubemapConvolution = BuildShader(Context, VSPath, FSPath);
     glUseProgram(ProgramCubemapConvolution);
     SendInt(glGetUniformLocation(ProgramCubemapConvolution, "Cubemap"), 0);
     CheckGLError("Convolution Shader");
 
-    MakeRelativePath(RenderResources->RH, FSPath, "data/shaders/cubemapprefilter_frag.glsl");
-    ProgramCubemapPrefilter = BuildShader(Memory, VSPath, FSPath);
+    ConcatStrings(FSPath, ctx::GetExePath(Context), "data/shaders/cubemapprefilter_frag.glsl");
+    ProgramCubemapPrefilter = BuildShader(Context, VSPath, FSPath);
     glUseProgram(ProgramCubemapPrefilter);
     SendInt(glGetUniformLocation(ProgramCubemapPrefilter, "Cubemap"), 0);
     CheckGLError("Prefilter Shader");
 
     frame_buffer FBOEnvmap = MakeFramebuffer(1, vec2i(CubemapWidth, CubemapWidth));
 
-    image *HDREnvmapImage = ResourceLoadImage(RenderResources, HDREnvmapFilename, true);
+    image *HDREnvmapImage = ResourceLoadImage(Context, HDREnvmapFilename, true);
 
     uint32 HDRLatlongEnvmap = Make2DTexture(HDREnvmapImage->Buffer, HDREnvmapImage->Width, HDREnvmapImage->Height,
             HDREnvmapImage->Channels, true, false, 1, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_REPEAT, GL_MIRRORED_REPEAT);
@@ -1582,17 +1559,16 @@ void ComputeIrradianceCubemap(render_resources *RenderResources, char const *HDR
     glDeleteProgram(ProgramCubemapPrefilter);
     DestroyFramebuffer(&FBOEnvmap);
     DestroyMesh(&SkyboxCube);
-#endif
 }
 
-uint32 PrecomputeGGXLUT(render_resources *RenderResources, uint32 Width)
+uint32 PrecomputeGGXLUT(context *Context, uint32 Width)
 {
     uint32 LUTProgram;
     path VSPath;
     path FSPath;
-    MakeRelativePath(RenderResources->RH, VSPath, "data/shaders/screenquad_vert.glsl");
-    MakeRelativePath(RenderResources->RH, FSPath, "data/shaders/ggxintegrate_frag.glsl");
-    LUTProgram = BuildShader(VSPath, FSPath);
+    ConcatStrings(VSPath, ctx::GetExePath(Context), "data/shaders/screenquad_vert.glsl");
+    ConcatStrings(FSPath, ctx::GetExePath(Context), "data/shaders/ggxintegrate_frag.glsl");
+    LUTProgram = BuildShader(Context, VSPath, FSPath);
 
     glActiveTexture(GL_TEXTURE0);
     uint32 GGXLUT = Make2DTexture(NULL, Width, Width,

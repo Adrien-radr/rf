@@ -53,14 +53,14 @@ static size_t GetComponentSize(int ComponentType)
     }
 }
 
-bool ResourceLoadGLTFModel(render_resources *RenderResources, model *Model, path const Filename, int AnisotropicLevel)
+bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, int AnisotropicLevel)
 {
     tinygltf::Model Mdl;
     tinygltf::TinyGLTF Loader;
     std::string LoadErr;
 
     path Filepath;
-    MakeRelativePath(RenderResources->RH, Filepath, Filename);
+    ConcatStrings(Filepath, ctx::GetExePath(Context), Filename);
     
     using namespace tinygltf;
 
@@ -91,6 +91,8 @@ bool ResourceLoadGLTFModel(render_resources *RenderResources, model *Model, path
 
     // Load Textures 
     // TODO - Load all textures first and register in a resource manager. Query it afterwards during material loading
+
+    render_resources *RenderResources = &Context->RenderResources;
 
     // Load Material
     int iter = 0;

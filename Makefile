@@ -1,6 +1,6 @@
 .PHONY: tags lib rf clean post_build
 
-all: tags rf lib post_build
+all: tags pre_build rf post_build
 
 # LIBRARY Defines
 GLFW_INCLUDE=ext/glfw/include
@@ -51,7 +51,6 @@ LIB_FLAGS=/LIBPATH:ext /LIBPATH:$(GLEW_LIB) /LIBPATH:$(GLFW_LIB) /LIBPATH:$(CJSO
 TARGET=bin/rf.lib
 PDB_TARGET=bin/rf.pdb
 
-
 $(GLEW_TARGET): 
 	@$(CC) $(CFLAGS) $(RELEASE_FLAGS) -DGLEW_STATIC -I$(GLEW_INCLUDE) -c ext/glew/src/glew.c -Fo$(GLEW_OBJECT)
 	@$(STATICLIB) $(GLEW_OBJECT) -OUT:$(GLEW_TARGET)
@@ -71,7 +70,7 @@ $(OBJ_DIR)%.obj: $(SRC_DIR)%.cpp
 	@$(CC) $(CFLAGS) $(VERSION_FLAGS) $(INCLUDE_FLAGS) -DGLEW_STATIC -c $< -Fo$@
 
 rf: $(STB_TARGET) $(GLEW_TARGET) $(CJSON_TARGET) $(OBJS)
-	@$(CC) $(CFLAGS) $(VERSION_FLAGS) $(INCLUDE_FLAGS) -DGLEW_STATIC $(OBJS) $(LINK) $(LIB_FLAGS) /OUT:$(TARGET) /PDB:$(PDB_TARGET)
+	@$(STATICLIB) $(OBJS) -OUT:$(TARGET) /PDB:$(PDB_TARGET)
 
 ##################################################
 # NOTE - LINUX BUILD
@@ -130,6 +129,10 @@ endif
 
 ##################################################
 ##################################################
+
+pre_build:
+	@mkdir -p bin/
+	@mkdir -p obj/
 
 post_build:
 	@rm -f *.lib *.exp

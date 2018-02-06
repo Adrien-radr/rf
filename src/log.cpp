@@ -2,23 +2,22 @@
 #include <algorithm>
 #include "log.h"
 #include "utils.h"
+#include "context.h"
 
 namespace rlog
 {
-    //game_system     *System;
+    context         *Context;
 
     FILE static     *LogFile;
     double static   LogTime = 0.0;
     path            LogFilename = "radar.log";
 
-    void Init(resource_helper *ResourceHelper)
+    void Init(context *Context)
     {
-        //game_system *Sys = (game_system*)Memory->PermanentMemPool;
-        //System = Sys;
         //System->ConsoleLog = (console_log*)PushArenaStruct(&Memory->SessionArena, console_log);
 
         path LogPath;
-        MakeRelativePath(ResourceHelper, LogPath, LogFilename);
+        ConcatStrings(LogPath, ctx::GetExePath(Context), LogFilename);
         LogFile = fopen(LogPath, "w");
         if(!LogFile)
         {

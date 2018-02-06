@@ -150,12 +150,18 @@ namespace ctx {
         return false;
     }
 
-    void Init(context *Context, context_descriptor const *Desc)
+    context *Init(context_descriptor const *Desc)
     {
         bool GLFWValid = false, GLEWValid = false;//, SoundValid = false;
 
+        context *Context = (context*)PushArenaData(Desc->SessionArena, sizeof(context));
+        Context->SessionArena = Desc->SessionArena;
+        Context->ScratchArena = Desc->ScratchArena;
+
+        GetExecutablePath(Context->RenderResources.ExecutablePath);
+
         GLFWValid = glfwInit();
-        if(GLFWValid)
+        if(Context && GLFWValid)
         {
             char WindowName[64];
             snprintf(WindowName, 64, "Radar v%d.%d.%d", RADAR_MAJOR, RADAR_MINOR, RADAR_PATCH);
@@ -229,17 +235,14 @@ namespace ctx {
 
                     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-                    // TODO - TODO - TODO
-#if 0
                     Context->RenderResources.DefaultDiffuseTexture = 
-                        ResourceLoad2DTexture(&Context->RenderResources, "data/default_diffuse.png", false, false, 1);
+                        ResourceLoad2DTexture(Context, "data/default_diffuse.png", false, false, 1);
 
                     Context->RenderResources.DefaultNormalTexture= 
-                        ResourceLoad2DTexture(&Context->RenderResources, "data/default_normal.png", false, false, 1);
+                        ResourceLoad2DTexture(Context, "data/default_normal.png", false, false, 1);
                     
                     Context->RenderResources.DefaultEmissiveTexture =
-                        ResourceLoad2DTexture(&Context->RenderResources, "data/default_emissive.png", false, false, 1);
-#endif
+                        ResourceLoad2DTexture(Context, "data/default_emissive.png", false, false, 1);
                 }
                 else
                 {
@@ -264,9 +267,11 @@ namespace ctx {
             Context->IsRunning = true;
             Context->IsValid = true;
         }
+        
+        return Context;
     }
 
-    void GetFrameInput(context *Context, game_input *Input)
+    void GetFrameInput(context *Context, input *Input)
     {
         memset(FrameReleasedKeys, 0, sizeof(FrameReleasedKeys));
         memset(FramePressedKeys, 0, sizeof(FramePressedKeys));
@@ -340,6 +345,16 @@ namespace ctx {
             glfwDestroyWindow(Context->Window);
         }
         glfwTerminate();
+    }
+
+    path const &GetExePath(context *Context)
+    {
+        return Context->RenderResources.ExecutablePath;
+    }
+
+    void *AllocScratch(context *Context, size_t Size)
+    {
+        return PushArenaData(Context->ScratchArena, Size);
     }
 
     void SetCursor(context *Context, cursor_type CursorType)

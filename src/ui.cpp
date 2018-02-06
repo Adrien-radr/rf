@@ -13,8 +13,8 @@
 #include "ui_theme.cpp"
 
 namespace ui {
-game_context static *Context;
-game_input static   *Input;
+static context *Context;
+static input   *Input;
 
 struct input_state
 {
@@ -23,35 +23,36 @@ struct input_state
     int16  Priority;
 };
 
-uint16 PanelCount;         // Total number of panels ever registered
-void *ParentID[UI_PARENT_SIZE]; // ID stack of the parent of the current widgets, changes when a panel is begin and ended
-int16 PanelOrder[UI_MAX_PANELS];
-int16 RenderOrder[UI_MAX_PANELS];
-uint16 ParentLayer;             // Current Parent layer widgets are attached to
-input_state Hover;
-input_state HoverNext;
-input_state Focus;
-input_state FocusNext;
-int16 ForcePanelFocus;
+static frame_stack  *UIStack;                   // Memory stack for UI data
+static uint16       PanelCount;                 // Total number of panels ever registered
+static void         *ParentID[UI_PARENT_SIZE];  // ID stack of the parent of the current widgets, changes when a panel is begin and ended
+static int16        PanelOrder[UI_MAX_PANELS];
+static int16        RenderOrder[UI_MAX_PANELS];
+static uint16       ParentLayer;                // Current Parent layer widgets are attached to
+static input_state  Hover;
+static input_state  HoverNext;
+static input_state  Focus;
+static input_state  FocusNext;
+static int16        ForcePanelFocus;
 
-void *MouseHold;
-bool ResizeHold;
+static void         *MouseHold;
+static bool         ResizeHold;
 
-int16 LastRootWidget; // Address of the last widget not attached to anything
+static int16        LastRootWidget;             // Address of the last widget not attached to anything
 
-uint32 static Program, ProgramRGBTexture;
-uint32 static ColorUniformLoc;
-uint32 static VAO;
-uint32 static VBO[2];
+static uint32       Program, ProgramRGBTexture;
+static uint32       ColorUniformLoc;
+static uint32       VAO;
+static uint32       VBO[2];
 
 // NOTE - This is what is stored each frame in scratch Memory
 // It stacks draw commands with this layout :
 // 1 render_info
 // 1 array of vertex
 // 1 array of uint16 for the indices
-void static *RenderCmd[UI_MAX_PANELS];
-uint32 static RenderCmdCount[UI_MAX_PANELS];
-memory_arena static RenderCmdArena[UI_MAX_PANELS];
+static void         *RenderCmd[UI_MAX_PANELS];
+static uint32       RenderCmdCount[UI_MAX_PANELS];
+static memory_arena RenderCmdArena[UI_MAX_PANELS];
 
 enum widget_type {
     WIDGET_PANEL,
@@ -91,7 +92,7 @@ vertex UIVertex(vec3f const &Position, vec2f const &Texcoord)
     return V;
 }
 
-void Init(game_memory *Memory, game_context *Context)
+void Init(context *Context)
 {
     ui::Context = Context;
     glGenVertexArrays(1, &VAO);
@@ -126,11 +127,11 @@ void Init(game_memory *Memory, game_context *Context)
     MouseHold = NULL;
     ResizeHold = false;
 
-    ParseDefaultUIConfig(Memory, Context);
+    ParseDefaultUIConfig(Context);
 
     path ConfigPath;
-    MakeRelativePath(&Memory->ResourceHelper, ConfigPath, "ui_config.json");
-    ParseUIConfig(Memory, Context, ConfigPath);
+    ConcatStrings(ConfigPath, ctx::GetExePath(Context), "ui_config.json");
+    ParseUIConfig(Context, ConfigPath);
 }
 
 bool HasFocus()
@@ -138,43 +139,42 @@ bool HasFocus()
     return Hover.ID != NULL;
 }
 
-void ReloadShaders(game_memory *Memory, game_context *Context)
+void ReloadShaders(context *Context)
 {
     path VSPath, FSPath;
-    MakeRelativePath(&Memory->ResourceHelper, VSPath, "data/shaders/ui_vert.glsl");
-    MakeRelativePath(&Memory->ResourceHelper, FSPath, "data/shaders/ui_frag.glsl");
-    Program = BuildShader(Memory, VSPath, FSPath);
+    ConcatStrings(VSPath, ctx::GetExePath(Context), "data/shaders/ui_vert.glsl");
+    ConcatStrings(FSPath, ctx::GetExePath(Context), "data/shaders/ui_frag.glsl");
+    Program = BuildShader(Context, VSPath, FSPath);
     glUseProgram(Program);
     SendInt(glGetUniformLocation(Program, "Texture0"), 0);
     ColorUniformLoc = glGetUniformLocation(Program, "Color");
-    context::RegisterShader2D(Context, Program);
+    ctx::RegisterShader2D(Context, Program);
 
-    MakeRelativePath(&Memory->ResourceHelper, VSPath, "data/shaders/ui_vert.glsl");
-    MakeRelativePath(&Memory->ResourceHelper, FSPath, "data/shaders/uitexrgb_frag.glsl");
-    ProgramRGBTexture = BuildShader(Memory, VSPath, FSPath);
+    ConcatStrings(VSPath, ctx::GetExePath(Context), "data/shaders/ui_vert.glsl");
+    ConcatStrings(FSPath, ctx::GetExePath(Context), "data/shaders/uitexrgb_frag.glsl");
+    ProgramRGBTexture = BuildShader(Context, VSPath, FSPath);
     glUseProgram(ProgramRGBTexture);
     SendInt(glGetUniformLocation(ProgramRGBTexture, "Texture0"), 0);
-    context::RegisterShader2D(Context, ProgramRGBTexture);
+    ctx::RegisterShader2D(Context, ProgramRGBTexture);
 
     CheckGLError("UI Shader");
 }
 
-void BeginFrame(game_memory *Memory, game_input *Input)
+void BeginFrame(input *Input)
 {
     // NOTE - reinit the frame stack for the ui
-    game_system *System = (game_system*)Memory->PermanentMemPool;
-    System->UIStack = (frame_stack*)PushArenaStruct(&Memory->ScratchArena, frame_stack);
+    UIStack = (frame_stack*)PushArenaStruct(ui::Context->ScratchArena, frame_stack);
 
     // TODO -  probably this can be done with 1 'alloc' and redirections in the buffer
     for(uint32 p = 0; p < UI_MAX_PANELS; ++p)
     {
-        RenderCmd[p] = PushArenaData(&Memory->ScratchArena, UI_STACK_SIZE/UI_MAX_PANELS);
+        RenderCmd[p] = PushArenaData(ui::Context->ScratchArena, UI_STACK_SIZE/UI_MAX_PANELS);
         InitArena(&RenderCmdArena[p], UI_STACK_SIZE/UI_MAX_PANELS, RenderCmd[p]);
     }
     memset(RenderCmdCount, 0, UI_MAX_PANELS * sizeof(uint32));
 
     ui::Input = Input;
-    context::SetCursor(Context, context::CURSOR_NORMAL);
+    ctx::SetCursor(Context, ctx::CURSOR_NORMAL);
 
     LastRootWidget = 0;
     ForcePanelFocus = 0;

@@ -7,8 +7,6 @@
 
 #define MAX_FBO_ATTACHMENTS 5
 
-struct game_context;
-
 struct image
 {
     void *Buffer;
@@ -114,7 +112,8 @@ struct resource_store
 
 struct render_resources
 {
-    resource_helper *RH;
+    path ExecutablePath;
+
     uint32 *DefaultDiffuseTexture;
     uint32 *DefaultNormalTexture;
     uint32 *DefaultEmissiveTexture;
@@ -124,63 +123,70 @@ struct render_resources
     resource_store Fonts;
 };
 
-void CheckGLError(char const *Mark = "");
-void CheckFramebufferError(char const *Mark = "");
+/// Error Handling
+void            CheckGLError(char const *Mark = "");
+void            CheckFramebufferError(char const *Mark = "");
 
-void *ResourceCheckExist(render_resources *RenderResources, render_resource_type Type, path const Filename);
-void ResourceStore(render_resources *RenderResources, render_resource_type Type, path const Filename, void *Resource);
-void ResourceFree(render_resources *RenderResources);
-image *ResourceLoadImage(render_resources *RenderResources, path const Filename, bool IsFloat, bool FlipY = true,
-                         int32 ForceNumChannel = 0);
-font *ResourceLoadFont(render_resources *RenderResources, path const Filename, uint32 PixelHeight, int Char0 = 32, int CharN = 127);
-uint32 *ResourceLoad2DTexture(render_resources *RenderResources, path const Filename, bool IsFloat, bool FloatHalfPrecision,
-                              uint32 AnisotropicLevel, int MagFilter = GL_LINEAR, int MinFilter = GL_LINEAR_MIPMAP_LINEAR, 
-                              int WrapS = GL_CLAMP_TO_EDGE, int WrapT = GL_CLAMP_TO_EDGE, int32 ForceNumChannel = 0);
+/// Resource loading and storage
+void            *ResourceCheckExist(render_resources *RenderResources, render_resource_type Type, path const Filename);
+void            ResourceStore(render_resources *RenderResources, render_resource_type Type, path const Filename, void *Resource);
+void            ResourceFree(render_resources *RenderResources);
+image           *ResourceLoadImage(context *Context, path const Filename, bool IsFloat, bool FlipY = true,
+                    int32 ForceNumChannel = 0);
+font            *ResourceLoadFont(context *Context, path const Filename, uint32 PixelHeight, int Char0 = 32, int CharN = 127);
+uint32          *ResourceLoad2DTexture(context *Context, path const Filename, bool IsFloat, bool FloatHalfPrecision,
+                    uint32 AnisotropicLevel, int MagFilter = GL_LINEAR, int MinFilter = GL_LINEAR_MIPMAP_LINEAR, 
+                    int WrapS = GL_CLAMP_TO_EDGE, int WrapT = GL_CLAMP_TO_EDGE, int32 ForceNumChannel = 0);
 
-void BindTexture2D(uint32 TextureID, uint32 TextureUnit);
-void BindTexture3D(uint32 TextureID, uint32 TextureUnit);
-uint32 Make2DTexture(void *ImageBuffer, uint32 Width, uint32 Height, uint32 Channels, bool IsFloat,
-        bool FloatHalfPrecision, real32 AnisotropicLevel, int MagFilter, int MinFilter, int WrapS, int WrapT);
-uint32 Make3DTexture(uint32 Width, uint32 Height, uint32 Depth, uint32 Channels, bool IsFloat, bool FloatHalfPrecision,
-        int MagFilter, int MinFilter, int WrapS, int WrapT, int WrapR);
-uint32 MakeCubemap(render_resources *RenderResources, path *Paths, bool IsFloat, bool FloatHalfPrecision, uint32 Width, uint32 Height, bool MakeMipmap);
-void ComputeIrradianceCubemap(render_resources *RenderResources, char const *HDREnvmapFilename,
-        uint32 *HDRCubemapEnvmap, uint32 *HDRGlossyEnvmap, uint32 *HDRIrradianceEnvmap);
-uint32 PrecomputeGGXLUT(render_resources *RenderResources, uint32 Width);
+/// Texture Utilities
+void            BindTexture2D(uint32 TextureID, uint32 TextureUnit);
+void            BindTexture3D(uint32 TextureID, uint32 TextureUnit);
+uint32          Make2DTexture(void *ImageBuffer, uint32 Width, uint32 Height, uint32 Channels, bool IsFloat,
+                    bool FloatHalfPrecision, real32 AnisotropicLevel, int MagFilter, int MinFilter, int WrapS, int WrapT);
+uint32          Make3DTexture(uint32 Width, uint32 Height, uint32 Depth, uint32 Channels, bool IsFloat, bool FloatHalfPrecision,
+                    int MagFilter, int MinFilter, int WrapS, int WrapT, int WrapR);
+uint32          MakeCubemap(context *Context, path *Paths, bool IsFloat, bool FloatHalfPrecision, uint32 Width, uint32 Height, bool MakeMipmap);
+void            ComputeIrradianceCubemap(context *Context, char const *HDREnvmapFilename,
+                    uint32 *HDRCubemapEnvmap, uint32 *HDRGlossyEnvmap, uint32 *HDRIrradianceEnvmap);
+uint32          PrecomputeGGXLUT(context *Context, uint32 Width);
 
-mesh MakeUnitCube(bool MakeAdditionalAttribs = true);
-mesh Make2DQuad(vec2i Start, vec2i End);
-mesh Make3DPlane(vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic = false);
-mesh MakeUnitSphere(bool MakeAdditionalAttribs = true, real32 TexScale = 1.f);
+/// Mesh Utilities
+uint32          MakeVertexArrayObject();
+uint32          AddIBO(uint32 Usage, uint32 Size, void const *Data);
+uint32          AddEmptyVBO(uint32 Size, uint32 Usage);
+void            FillVBO(uint32 Attrib, uint32 AttribStride, uint32 Type, size_t ByteOffset, uint32 Size, void const *Data);
+void            UpdateVBO(uint32 VBO, size_t ByteOffset, uint32 Size, void *Data);
+void            DestroyMesh(mesh *Mesh);
+void            RenderMesh(mesh *Mesh);
 
-uint32 BuildShader(char *VSPath, char *FSPath, char *GSPath = NULL);
+mesh            MakeUnitCube(bool MakeAdditionalAttribs = true);
+mesh            Make2DQuad(vec2i Start, vec2i End);
+mesh            Make3DPlane(vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic = false);
+mesh            MakeUnitSphere(bool MakeAdditionalAttribs = true, real32 TexScale = 1.f);
 
-void SendVec2(uint32 Loc, vec2f value);
-void SendVec3(uint32 Loc, vec3f value);
-void SendVec4(uint32 Loc, vec4f value);
-void SendMat4(uint32 Loc, mat4f value);
-void SendInt(uint32 Loc, int value);
-void SendFloat(uint32 Loc, real32 value);
+/// Model Utilities
+bool            ResourceLoadGLTFModel(context *Context, model *Model, path const Filename);
 
-frame_buffer MakeFramebuffer(uint32 NumAttachments, vec2i Size, bool AddDepthBuffer = true);
-void DestroyFramebuffer(frame_buffer *FB);
-void FramebufferAttachBuffer(frame_buffer *FB, uint32 Attachment, uint32 Channels, bool IsFloat, bool FloatHalfPrecision, bool Mipmap);
-void FramebufferAttachBuffer(frame_buffer *FB, uint32 Attachment, uint32 TextureID);
-void FramebufferSetAttachmentCount(frame_buffer *FB, int Count);
+/// Shader Utilities
+uint32          BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath = NULL);
+void            SendVec2(uint32 Loc, vec2f value);
+void            SendVec3(uint32 Loc, vec3f value);
+void            SendVec4(uint32 Loc, vec4f value);
+void            SendMat4(uint32 Loc, mat4f value);
+void            SendInt(uint32 Loc, int value);
+void            SendFloat(uint32 Loc, real32 value);
 
-uint32 MakeVertexArrayObject();
-uint32 AddIBO(uint32 Usage, uint32 Size, void const *Data);
-uint32 AddEmptyVBO(uint32 Size, uint32 Usage);
-void FillVBO(uint32 Attrib, uint32 AttribStride, uint32 Type, size_t ByteOffset, uint32 Size, void const *Data);
-void UpdateVBO(uint32 VBO, size_t ByteOffset, uint32 Size, void *Data);
-void DestroyMesh(mesh *Mesh);
-void RenderMesh(mesh *Mesh);
+/// Framebuffer Utilities
+frame_buffer    MakeFramebuffer(uint32 NumAttachments, vec2i Size, bool AddDepthBuffer = true);
+void            DestroyFramebuffer(frame_buffer *FB);
+void            FramebufferAttachBuffer(frame_buffer *FB, uint32 Attachment, uint32 Channels, bool IsFloat, bool FloatHalfPrecision, bool Mipmap);
+void            FramebufferAttachBuffer(frame_buffer *FB, uint32 Attachment, uint32 TextureID);
+void            FramebufferSetAttachmentCount(frame_buffer *FB, int Count);
 
-real32 GetDisplayTextWidth(char const *Text, font *Font, real32 Scale);
-void FillDisplayTextInterleaved(char const *Text, uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
-                                real32 *VertData, uint16 *Indices, real32 Scale = 1.0f);
-void FillDisplayTextInterleavedUTF8(char const *Text , uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
-                                    real32 *VertData, uint16 *IdxData, real32 Scale = 1.0f);
-
-bool ResourceLoadGLTFModel(render_resources *RenderResources, model *Model, path const Filename, game_context *Context);
+/// Display Text Utilities
+real32          GetDisplayTextWidth(char const *Text, font *Font, real32 Scale);
+void            FillDisplayTextInterleaved(char const *Text, uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
+                    real32 *VertData, uint16 *Indices, real32 Scale = 1.0f);
+void            FillDisplayTextInterleavedUTF8(char const *Text , uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
+                    real32 *VertData, uint16 *IdxData, real32 Scale = 1.0f);
 #endif

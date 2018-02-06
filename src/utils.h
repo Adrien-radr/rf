@@ -8,23 +8,37 @@
 #define DEFAULT_DATE_FMT "%a %d %b %Y"
 #define DEFAULT_TIME_FMT "%H:%M:%S"
 
-bool DiskFileExists(path const Filename);
-void DiskFileCopy(path const DstPath, path const SrcPath);
-void *ReadFileContents(path const Filename, int *FileSize);
-void MakeRelativePath(resource_helper *RH, path Dst, path const Filename);
-size_t GetDateTime(char *Dst, size_t DstSize, char const *Fmt);
+/// Returns as a string in Dst the current date/time depending on the asked format
+size_t  GetDateTime(char *Dst, size_t DstSize, char const *Fmt);
+/// Ask the running thread to sleep for an amount of ms
+void    PlatformSleep(uint32 MillisecondsToSleep);
+
+/// Concatenate 2 strings so that Dst = Str1 + Str2 (in std::string terms)
+void    ConcatStrings(path Dst, path const Str1, path const Str2);
+
+/// Fills the given path with the absolute path to the running executable
+void    GetExecutablePath(path Path);
+/// Checks if a file on disk exist and returns the result
+bool    DiskFileExists(path const Filename);
+/// Copy a file on disk
+void    DiskFileCopy(path const DstPath, path const SrcPath);
+
+/// Reads the content of Filename and returns it.
+/// Also returns the file size in out-parameter if needed
+/// Context is needed for the scratch alloc of opening the file
+void    *ReadFileContents(context *Context, path const Filename, int32 *FileSize);
 
 /// Returns the number of byte characters that the UTF8 string is composed of
 /// If 1, it is a normal ascii string
 /// Returns -1 if the string is not UTF8
 /// If Unicode is non NULL, it is filled with the trailing unicode first char of the string
-int    UTF8CharCount(char const *Str, uint16 *Unicode = NULL);
+int     UTF8CharCount(char const *Str, uint16 *Unicode = NULL);
 
 /// Returns the length (number of characters) of an UTF8 string
-size_t UTF8Len(char const *Str, size_t MaxChar = -1);
+size_t  UTF8Len(char const *Str, size_t MaxChar = -1);
 
 /// Converts the UTF8 string to an unsigned integers (e.g. for indexing)
-uint16 UTF8CharToInt(char const *Str, size_t *CharAdvance);
+uint16  UTF8CharToInt(char const *Str, size_t *CharAdvance);
 
 template<typename T>
 inline T JSON_Get(cJSON *Root, char const *ValueName, T const &DefaultValue)

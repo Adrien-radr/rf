@@ -1,10 +1,11 @@
 #include <ctime>
 #include "utils.h"
+#include "context.h"
 
-void MakeRelativePath(resource_helper *RH, path Dst, path const Filename)
+void ConcatStrings(path Dst, path const Str1, path const Str2)
 {
-    strncpy(Dst, RH->ExecutablePath, MAX_PATH);
-    strncat(Dst, Filename, MAX_PATH);
+    strncpy(Dst, Str1, MAX_PATH);
+    strncat(Dst, Str2, MAX_PATH);
 }
 
 bool DiskFileExists(path const Filename)
@@ -18,7 +19,7 @@ bool DiskFileExists(path const Filename)
     return false;
 }
 
-void *ReadFileContents(path const Filename, int32 *FileSize)
+void *ReadFileContents(context *Context, path const Filename, int32 *FileSize)
 {
     char *Contents = NULL;
     FILE *fp = fopen(Filename, "rb");
@@ -29,7 +30,7 @@ void *ReadFileContents(path const Filename, int32 *FileSize)
         {
             int32 Size = ftell(fp);
             rewind(fp);
-            Contents = (char*)calloc(1, Size+1);
+            Contents = (char*)ctx::AllocScratch(Context, Size+1);
             size_t Read = fread(Contents, Size, 1, fp);
             if(Read != 1)
             {
@@ -142,3 +143,103 @@ uint16 UTF8CharToInt(char const *Str, size_t *CharAdvance)
 
     return Unicode;
 }
+
+/// Platform dependent functions
+#ifdef RADAR_WIN32
+// NOTE : expect a MAX_PATH string as Path
+void GetExecutablePath(path Path)
+{
+    HMODULE ExecHandle = GetModuleHandleW(NULL);
+    GetModuleFileNameA(ExecHandle, Path, MAX_PATH);
+
+    char *LastPos = strrchr(Path, '\\');
+    unsigned int NumChar = (unsigned int)(LastPos - Path) + 1;
+
+    // Null-terminate the string at that position before returning
+    Path[NumChar] = 0;
+}
+
+void DiskFileCopy(path const DstPath, path const SrcPath)
+{
+    CopyFileA(SrcPath, DstPath, FALSE);
+}
+
+void PlatformSleep(uint32 MillisecondsToSleep)
+{
+    Sleep(MillisecondsToSleep);
+}
+#else
+#ifdef RADAR_UNIX
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dlfcn.h>
+#include <fcntl.h>
+
+// NOTE : expect a MAX_PATH string as Path
+bool GetExecutablePath(path Path)
+{
+    struct stat Info;
+    path StatProc;
+
+    pid_t pid = getpid();
+    snprintf(StatProc, MAX_PATH, "/proc/%d/exe", pid);
+    ssize_t BytesRead = readlink(StatProc, Path, MAX_PATH);
+    if(-1 == BytesRead)
+    {
+        printf("Fatal Error : Can't query Executable path.\n");
+        return false;
+    }
+
+    Path[BytesRead] = 0;
+
+    char *LastPos = strrchr(Path, '/');
+    unsigned int NumChar = (unsigned int)(LastPos - Path) + 1;
+
+    // Null-terminate the string at that position before returning
+    Path[NumChar] = 0;
+
+    return true;
+}
+
+static void CopyFile(path const Src, path const Dst)
+{
+    // NOTE - No CopyFile on Linux : open Src, read it and copy it in Dst
+    int SFD = open(Src, O_RDONLY);
+    int DFD = open(Dst, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
+    char FileBuf[Kilobytes(4)];
+
+    // Read until we can't anymore
+    while(1)
+    {
+        ssize_t Read = read(SFD, FileBuf, sizeof(FileBuf));
+        if(!Read)
+        {
+            break;
+        }
+        ssize_t Written = write(DFD, FileBuf, Read);
+        if(Read != Written)
+        {
+            printf("Copy File Error [%s].\n", Dst);
+        }
+    }
+
+    close(SFD);
+    close(DFD);
+}
+
+void DiskFileCopy(path const DstPath, path const SrcPath)
+{
+    CopyFile(SrcPath, DstPath);
+}
+
+void PlatformSleep(uint32 MillisecondsToSleep)
+{
+    struct timespec TS;
+    TS.tv_sec = MillisecondsToSleep / 1000;
+    TS.tv_nsec = (MillisecondsToSleep % 1000) * 1000000;
+    nanosleep(&TS, NULL);
+}
+#endif
+#endif

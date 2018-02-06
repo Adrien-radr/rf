@@ -68,7 +68,7 @@ namespace ui
         }
     }
 
-    static font *ParseConfigFont(cJSON *root, game_context *Context, char const *Name, int c0, int cn)
+    static font *ParseConfigFont(cJSON *root, context *Context, char const *Name, int c0, int cn)
     {
         cJSON *FontInfo = cJSON_GetObjectItem(root, Name);
         if(FontInfo && cJSON_GetArraySize(FontInfo) == 2)
@@ -76,16 +76,16 @@ namespace ui
             path FontPath;
             strncpy(FontPath, cJSON_GetArrayItem(FontInfo, 0)->valuestring, MAX_PATH);
             int FontSize = cJSON_GetArrayItem(FontInfo, 1)->valueint;
-            return ResourceLoadFont(&Context->RenderResources, FontPath, FontSize, c0, cn);
+            return ResourceLoadFont(Context, FontPath, FontSize, c0, cn);
         }
         else
         {
             printf("Error loading UI Theme Font %s, loading default DroidSansMono instead.\n", Name);
-            return ResourceLoadFont(&Context->RenderResources, "data/DroidSansMonoSlashed.ttf", 13, 32, 127);
+            return ResourceLoadFont(Context, "data/DroidSansMonoSlashed.ttf", 13, 32, 127);
         }
     }
 
-    static void ParseUIConfigRoot(ui_theme *DstTheme, cJSON *root, game_context *Context)
+    static void ParseUIConfigRoot(ui_theme *DstTheme, cJSON *root, context *Context)
     {
         DstTheme->Red = JSON_Get(root, "Red", DefaultTheme.Red);
         DstTheme->Green = JSON_Get(root, "Green", DefaultTheme.Green);
@@ -112,10 +112,10 @@ namespace ui
         DstTheme->AwesomeFont = ParseConfigFont(root, Context, "AwesomeFont", ICON_MIN_FA, 1+ICON_MAX_FA);
     }
 
-    static void ParseDefaultUIConfig(game_memory *Memory, game_context *Context)
+    static void ParseDefaultUIConfig(context *Context)
     {
         path DefaultConfigPath;
-        MakeRelativePath(&Memory->ResourceHelper, DefaultConfigPath, "default_ui_config.json");
+        ConcatStrings(DefaultConfigPath, ctx::GetExePath(Context), "default_ui_config.json");
 
         // If the default config doesnt exist, just crash, someone has been stupid
         if(!DiskFileExists(DefaultConfigPath))
@@ -124,7 +124,7 @@ namespace ui
             exit(1);
         }
 
-        void *Content = ReadFileContents(&Memory->ScratchArena, DefaultConfigPath, 0);
+        void *Content = ReadFileContents(Context, DefaultConfigPath, 0);
         if(Content)
         {
             cJSON *root = cJSON_Parse((char*)Content);
@@ -144,9 +144,9 @@ namespace ui
         }
     }
 
-    static void ParseUIConfig(game_memory *Memory, game_context *Context, path const ConfigPath)
+    static void ParseUIConfig(context *Context, path const ConfigPath)
     {
-        void *Content = ReadFileContents(&Memory->ScratchArena, ConfigPath, 0);
+        void *Content = ReadFileContents(Context, ConfigPath, 0);
         if(Content)
         {
             cJSON *root = cJSON_Parse((char*)Content);
@@ -165,9 +165,9 @@ namespace ui
             printf("Generating UI theme from Default Theme...\n");
 
             path DefaultConfigPath;
-            MakeRelativePath(&Memory->ResourceHelper, DefaultConfigPath, "default_ui_config.json");
+            ConcatStrings(DefaultConfigPath, ctx::GetExePath(Context), "default_ui_config.json");
             path PersonalConfigPath;
-            MakeRelativePath(&Memory->ResourceHelper, PersonalConfigPath, "ui_config.json");
+            ConcatStrings(PersonalConfigPath, ctx::GetExePath(Context), "ui_config.json");
             DiskFileCopy(PersonalConfigPath, DefaultConfigPath);
 
             Theme = DefaultTheme;

@@ -14,6 +14,9 @@
 
 struct context_descriptor
 {
+    memory_arena *SessionArena;
+    memory_arena *ScratchArena;
+
     real32 WindowX, WindowY;        // position (topleft origin)
     int WindowWidth, WindowHeight;  // size
     bool VSync;
@@ -23,6 +26,14 @@ struct context_descriptor
 
 struct context
 {
+    // The context (thus the RF library) is initialized with access to
+    // both a Session long arena pool for storing rendering resources, 
+    // as well as a Scratch pool for storing frame-long temporary data
+    memory_arena *SessionArena;
+    memory_arena *ScratchArena;
+
+    render_resources RenderResources;
+
     GLFWwindow *Window;
 
     mat4f ProjectionMatrix3D;
@@ -59,16 +70,20 @@ namespace ctx
         CURSOR_VRESIZE
     };
 
-    void Init(context *Context, context_descriptor const *Desc);
+    context *Init(context_descriptor const *Desc);
     void Destroy(context *Context);
 
     bool WindowResized(context *Context);
     void UpdateShaderProjection(context *Context);
-    void GetFrameInput(context *Context, game_input *Input);
+    void GetFrameInput(context *Context, input *Input);
 
     void RegisteredShaderClear(context *Context);
     void RegisterShader3D(context *Context, uint32 ProgramID);
     void RegisterShader2D(context *Context, uint32 ProgramID);
+
+    path const &GetExePath(context *Context);
+
+    void *AllocScratch(context *Context, size_t Size);
 
     void SetCursor(context *Context, cursor_type CursorType);
     GLenum SetWireframeMode(context *Context, GLenum Mode = 0);

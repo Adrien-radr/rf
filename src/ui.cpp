@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "utils.h"
+#include "context.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // All functions accept positions and sizes in absolute coordinate with the coordinate

@@ -30,7 +30,7 @@ namespace log {
         GetDateTime(CurrTime + 1, 63, DEFAULT_TIME_FMT);
         strncat(CurrDate + WrittenChar, CurrTime, 64);
 
-        LogInfo("Radar Engine Log v%d.%d.%d", RF_MAJOR, RF_MINOR, RF_PATCH );
+        LogInfo("Radar Foundation Log (RF %d.%d.%d)", RF_MAJOR, RF_MINOR, RF_PATCH);
         LogInfo("%s", CurrDate);
         LogInfo( "========================" );
     }
@@ -41,7 +41,7 @@ namespace log {
         {
             char CurrTime[64];
             GetDateTime(CurrTime, 64, DEFAULT_TIME_FMT);
-            LogInfo("Radar Engine Log End. %s\n", CurrTime);
+            LogInfo("Radar Foundation Log End. %s\n", CurrTime);
             fclose(LogFile);
         }
     }

@@ -1,7 +1,7 @@
 #ifndef RF_UI_H
 #define RF_UI_H
 
-#include "context.h"
+#include "rf_defs.h"
 #include "fontawesome.h"
 
 namespace rf {
@@ -9,6 +9,9 @@ namespace rf {
 #define UI_TITLEBAR_HEIGHT 20
 #define UI_BORDER_WIDTH 1
 #define UI_MARGIN_WIDTH 4
+
+struct context;
+struct font;
 
 /// Panels are created by giving a permanent uint32 ID pointer
 /// This ID should be set to 0 by the caller at first, to signify an uninitialized state.

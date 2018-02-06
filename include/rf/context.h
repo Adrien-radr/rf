@@ -23,6 +23,7 @@ struct context_descriptor
     bool VSync;
     real32 FOV;
     real32 NearPlane, FarPlane;
+    path ExecutableName;
 };
 
 struct context

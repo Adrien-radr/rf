@@ -3,10 +3,6 @@
 
 #include "rf_common.h"
 
-#define POOL_OFFSET(Pool, Structure) ((uint8*)(Pool) + sizeof(Structure))
-#define PushArenaStruct(Arena, Struct) _PushArenaData((Arena), sizeof(Struct))
-#define PushArenaData(Arena, Size) _PushArenaData((Arena), (Size))
-
 // TODO - See if 256 is enough for more one liner ui strings
 #define CONSOLE_CAPACITY 128
 #define CONSOLE_STRINGLEN 256
@@ -20,9 +16,8 @@
 #define MOUSE_UP(MouseState) KEY_UP(MouseState)
 #define MOUSE_DOWN(MouseState) KEY_DOWN(MouseState)
 
+/// Memory pool and arena helper functions
 namespace rf {
-struct context;
-
 struct memory_arena
 {
     uint8   *BasePtr;   // Start of Arena, in bytes
@@ -54,7 +49,14 @@ inline void *_PushArenaData(memory_arena *Arena, uint64 Size)
 
     return (void*)MemoryPtr;
 }
+}
 
+#define POOL_OFFSET(Pool, Structure) ((uint8*)(Pool) + sizeof(Structure))
+#define PushArenaStruct(Arena, Struct) (Struct*)rf::_PushArenaData((Arena), sizeof(Struct))
+#define PushArenaData(Arena, Size) rf::_PushArenaData((Arena), (Size))
+
+namespace rf {
+struct context;
 typedef uint8 key_state;
 typedef uint8 mouse_state;
 

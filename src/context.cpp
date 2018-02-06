@@ -1,5 +1,6 @@
 #include "context.h"
 #include "utils.h"
+#include "ui.h"
 //#include "sound.h"
 
 namespace rf {
@@ -162,12 +163,12 @@ namespace ctx {
 
         GetExecutablePath(Context->RenderResources.ExecutablePath);
 
+        // Init log
+        log::Init(Context);
+
         GLFWValid = glfwInit();
         if(Context && GLFWValid)
         {
-            char WindowName[64];
-            snprintf(WindowName, 64, "Radar v%d.%d.%d", RF_MAJOR, RF_MINOR, RF_PATCH);
-
             glfwSetErrorCallback(ProcessErrorEvent);
 #if 0
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -176,7 +177,7 @@ namespace ctx {
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 #endif
 
-            Context->Window = glfwCreateWindow(Desc->WindowWidth, Desc->WindowHeight, WindowName, NULL, NULL);
+            Context->Window = glfwCreateWindow(Desc->WindowWidth, Desc->WindowHeight, Desc->ExecutableName, NULL, NULL);
             if(Context->Window)
             {
                 glfwMakeContextCurrent(Context->Window);
@@ -269,6 +270,8 @@ namespace ctx {
             Context->IsRunning = true;
             Context->IsValid = true;
         }
+
+        ui::Init(Context);
         
         return Context;
     }
@@ -347,6 +350,8 @@ namespace ctx {
             glfwDestroyWindow(Context->Window);
         }
         glfwTerminate();
+
+        log::Destroy();
     }
 
     path const &GetExePath(context *Context)

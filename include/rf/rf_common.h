@@ -7,8 +7,8 @@
 #include "linmath.h"
 
 #define RF_MAJOR 0
-#define RF_MINOR 0
-#define RF_PATCH 1
+#define RF_MINOR 1
+#define RF_PATCH 0
 
 // Platform
 #if defined(_WIN32) || defined(_WIN64)

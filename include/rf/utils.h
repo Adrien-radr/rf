@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef RF_UTILS_H
+#define RF_UTILS_H
 
 #include "rf_defs.h"
 #include "log.h"

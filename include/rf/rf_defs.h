@@ -1,5 +1,5 @@
-#ifndef DEFINITIONS_H
-#define DEFINITIONS_H
+#ifndef RF_DEFS_H
+#define RF_DEFS_H
 
 #include "rf_common.h"
 

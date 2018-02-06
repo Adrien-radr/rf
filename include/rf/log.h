@@ -1,5 +1,5 @@
-#ifndef LOG_H
-#define LOG_H
+#ifndef RF_LOG_H
+#define RF_LOG_H
 
 #include "rf_defs.h"
 #include <string>

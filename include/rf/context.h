@@ -1,5 +1,5 @@
-#ifndef CONTEXT_H
-#define CONTEXT_H
+#ifndef RF_CONTEXT_H
+#define RF_CONTEXT_H
 
 #include "render.h"
 

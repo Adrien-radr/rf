@@ -1,5 +1,5 @@
-#ifndef RADAR_COMMON
-#define RADAR_COMMON
+#ifndef RF_COMMON
+#define RF_COMMON
 
 #include <cstdio>
 #include <cstring>

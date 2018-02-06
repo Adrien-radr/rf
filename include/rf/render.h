@@ -1,5 +1,5 @@
-#ifndef RENDER_H
-#define RENDER_H
+#ifndef RF_RENDER_H
+#define RF_RENDER_H
 
 #include "rf_defs.h"
 #include "GL/glew.h"

@@ -1,5 +1,5 @@
-#ifndef UI_H
-#define UI_H
+#ifndef RF_UI_H
+#define RF_UI_H
 
 #include "context.h"
 #include "fontawesome.h"

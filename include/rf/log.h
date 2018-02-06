@@ -1,7 +1,7 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include "definitions.h"
+#include "rf_defs.h"
 #include <string>
 
 namespace rf

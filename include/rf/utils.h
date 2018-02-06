@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "definitions.h"
+#include "rf_defs.h"
 #include "log.h"
 #include "cJSON.h"
 

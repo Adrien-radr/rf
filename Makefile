@@ -12,6 +12,7 @@ CJSON_LIB=ext/cjson
 
 
 SRC_DIR=src/
+INCLUDE_DIR=include/rf/
 SRCS= \
 	render.cpp \
 	utils.cpp \
@@ -20,7 +21,7 @@ SRCS= \
 	ui.cpp
 OBJ_DIR=obj/
 
-INCLUDE_FLAGS=-I$(SRC_DIR) -Iext/ -I$(GLEW_INCLUDE) -I$(GLFW_INCLUDE) -I$(CJSON_INCLUDE)
+INCLUDE_FLAGS=-I$(INCLUDE_DIR) -Iext/ -I$(GLEW_INCLUDE) -I$(GLFW_INCLUDE) -I$(CJSON_INCLUDE)
 
 ##################################################
 # NOTE - WINDOWS BUILD
@@ -48,8 +49,8 @@ VERSION_FLAGS=$(DEBUG_FLAGS)
 
 LIB_FLAGS=/LIBPATH:ext /LIBPATH:$(GLEW_LIB) /LIBPATH:$(GLFW_LIB) /LIBPATH:$(CJSON_LIB) stb.lib cjson.lib libglfw3.lib glew.lib opengl32.lib user32.lib shell32.lib gdi32.lib
 
-TARGET=bin/rf.lib
-PDB_TARGET=bin/rf.pdb
+TARGET=lib/rf.lib
+PDB_TARGET=lib/rf.pdb
 
 $(GLEW_TARGET): 
 	@$(CC) $(CFLAGS) $(RELEASE_FLAGS) -DGLEW_STATIC -I$(GLEW_INCLUDE) -c ext/glew/src/glew.c -Fo$(GLEW_OBJECT)
@@ -95,7 +96,7 @@ VERSION_FLAGS=$(DEBUG_FLAGS)
 LIB_FLAGS=-Lext/ -L$(GLEW_LIB) -L$(GLFW_LIB) -L$(CJSON_LIB) -lstb -lcJSON -lcjson -lglfw3 -lglew \
 		  -lGL -lX11 -lXinerama -lXrandr -lXcursor -lm -ldl -lpthread
 
-TARGET=bin/librf.a
+TARGET=lib/librf.a
 
 $(GLEW_TARGET): 
 	@echo "AR $(GLEW_TARGET)"
@@ -130,7 +131,7 @@ endif
 ##################################################
 
 pre_build:
-	@mkdir -p bin/
+	@mkdir -p lib/
 	@mkdir -p obj/
 
 post_build:
@@ -145,4 +146,4 @@ clean_ext:
 	rm $(GLEW_TARGET)
 
 tags:
-	@ctags --c++-kinds=+p --fields=+iaS --extra=+q $(SRC_DIR)*.cpp $(SRC_DIR)*.h $(LIB_INCLUDES)
+	@ctags --c++-kinds=+p --fields=+iaS --extra=+q $(SRC_DIR)*.cpp $(INCLUDE_DIR)*.h $(LIB_INCLUDES)

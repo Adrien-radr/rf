@@ -1,7 +1,7 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
-#include "radar_common.h"
+#include "rf_common.h"
 
 #define POOL_OFFSET(Pool, Structure) ((uint8*)(Pool) + sizeof(Structure))
 #define PushArenaStruct(Arena, Struct) _PushArenaData((Arena), sizeof(Struct))

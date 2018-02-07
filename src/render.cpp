@@ -328,6 +328,12 @@ void BindTexture3D(uint32 TextureID, uint32 TextureUnit)
     glBindTexture(GL_TEXTURE_3D, TextureID);
 }
 
+void BindCubemap(uint32 TextureID, uint32 TextureUnit)
+{
+    glActiveTexture(GL_TEXTURE0 + TextureUnit);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, TextureID);
+}
+
 uint32 *ResourceLoad2DTexture(context *Context, path const Filename, bool IsFloat, bool FloatHalfPrecision,
                               uint32 AnisotropicLevel, int MagFilter, int MinFilter, int WrapS, int WrapT, int32 ForceNumChannel)
 {
@@ -603,7 +609,6 @@ uint32 _CompileShader(context *Context, char const *Src, int Type)
                 "%s"
                 "------------------------------------------", Log);
 
-        free(Log);
         Shader = 0;
     }
     return Shader;

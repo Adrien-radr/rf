@@ -25,7 +25,6 @@ struct input_state
     int16  Priority;
 };
 
-static frame_stack  *UIStack;                   // Memory stack for UI data
 static uint16       PanelCount;                 // Total number of panels ever registered
 static void         *ParentID[UI_PARENT_SIZE];  // ID stack of the parent of the current widgets, changes when a panel is begin and ended
 static int16        PanelOrder[UI_MAX_PANELS];
@@ -144,50 +143,50 @@ bool HasFocus()
 void ReloadShaders(context *Context)
 {
     static char const *VSSrc =
-        "#version 400"
+        "#version 400\n"
 
-        "layout(location=0) in vec3 position;"
-        "layout(location=1) in vec2 texcoord;"
+        "layout(location=0) in vec3 position;\n"
+        "layout(location=1) in vec2 texcoord;\n"
 
-        "uniform mat4 ProjMatrix;"
+        "uniform mat4 ProjMatrix;\n"
 
-        "out vec2 v_texcoord;"
+        "out vec2 v_texcoord;\n"
 
-        "void main(){"
-        "    v_texcoord = texcoord;"
-        "    gl_Position = ProjMatrix * vec4(position, 1.0);"
+        "void main(){\n"
+        "    v_texcoord = texcoord;\n"
+        "    gl_Position = ProjMatrix * vec4(position, 1.0);\n"
         "}";
 
     static char const *FSSrc =
-        "#version 400"
+        "#version 400\n"
 
-        "in vec2 v_texcoord;"
-        "in vec4 v_color;"
+        "in vec2 v_texcoord;\n"
+        "in vec4 v_color;\n"
 
-        "uniform sampler2D Texture0;"
-        "uniform vec4 Color;"
+        "uniform sampler2D Texture0;\n"
+        "uniform vec4 Color;\n"
 
-        "out vec4 frag_color;"
+        "out vec4 frag_color;\n"
 
-        "void main() {"
-        "    vec4 TexValue = texture(Texture0, v_texcoord);"
-        "    frag_color = Color;"
-        "    frag_color.a *= TexValue.r;"
+        "void main() {\n"
+        "    vec4 TexValue = texture(Texture0, v_texcoord);\n"
+        "    frag_color = Color;\n"
+        "    frag_color.a *= TexValue.r;\n"
         "}";
 
     static char const *FSTexRGBSrc =
-        "#version 400"
+        "#version 400\n"
 
-        "in vec2 v_texcoord;"
-        "in vec4 v_color;"
+        "in vec2 v_texcoord;\n"
+        "in vec4 v_color;\n"
 
-        "uniform sampler2D Texture0;"
+        "uniform sampler2D Texture0;\n"
 
-        "out vec4 frag_color;"
+        "out vec4 frag_color;\n"
 
-        "void main()"
-        "{"
-        "    frag_color = texture(Texture0, v_texcoord);"
+        "void main()\n"
+        "{\n"
+        "    frag_color = texture(Texture0, v_texcoord);\n"
         "}";
 
     Program = BuildShaderFromSource(Context, VSSrc, FSSrc);
@@ -206,9 +205,6 @@ void ReloadShaders(context *Context)
 
 void BeginFrame(input *Input)
 {
-    // NOTE - reinit the frame stack for the ui
-    UIStack = (frame_stack*)PushArenaStruct(ui::Context->ScratchArena, frame_stack);
-
     // TODO -  probably this can be done with 1 'alloc' and redirections in the buffer
     for(uint32 p = 0; p < UI_MAX_PANELS; ++p)
     {

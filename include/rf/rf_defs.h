@@ -2,6 +2,7 @@
 #define RF_DEFS_H
 
 #include "rf_common.h"
+#include "keys.h"
 
 // TODO - See if 256 is enough for more one liner ui strings
 #define CONSOLE_CAPACITY 128
@@ -72,29 +73,7 @@ struct input
     int32  MouseDY;
     int32  MouseDZ; // wheel
 
-    key_state KeyW;
-    key_state KeyA;
-    key_state KeyS;
-    key_state KeyD;
-    key_state KeyR;
-    key_state KeyF;
-    key_state KeyLShift;
-    key_state KeyLCtrl;
-    key_state KeyLAlt;
-    key_state KeySpace;
-    key_state KeyF1;
-    key_state KeyF2;
-    key_state KeyF3;
-    key_state KeyF11;
-    key_state KeyNumPlus;
-    key_state KeyNumMinus;
-    key_state KeyNumMultiply;
-    key_state KeyNumDivide;
-    key_state KeyTilde;
-    key_state KeyLeft;
-    key_state KeyRight;
-    key_state KeyUp;
-    key_state KeyDown;
+    key_state Keys[KEY_LAST-KEY_FIRST];
 
     mouse_state MouseLeft;
     mouse_state MouseRight;
@@ -150,12 +129,6 @@ namespace ui
         vec2i       Position;
         theme_font  Font;
         theme_color Color;
-    };
-
-    struct frame_stack
-    {
-        text_line *TextLines[UI_MAXSTACKOBJECT];
-        uint32 TextLineCount;
     };
 }
 

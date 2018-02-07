@@ -300,35 +300,16 @@ namespace ctx {
             Context->IsRunning = false;
         }
 
-        if(FrameReleasedKeys[GLFW_KEY_ESCAPE])
+        if(FrameReleasedKeys[KEY_ESCAPE])
         {
             Context->IsRunning = false;
         }
 
         // Get Player controls
-        Input->KeyW = BuildKeyState(GLFW_KEY_W);
-        Input->KeyA = BuildKeyState(GLFW_KEY_A);
-        Input->KeyS = BuildKeyState(GLFW_KEY_S);
-        Input->KeyD = BuildKeyState(GLFW_KEY_D);
-        Input->KeyR = BuildKeyState(GLFW_KEY_R);
-        Input->KeyF = BuildKeyState(GLFW_KEY_F);
-        Input->KeyLShift = BuildKeyState(GLFW_KEY_LEFT_SHIFT);
-        Input->KeyLCtrl = BuildKeyState(GLFW_KEY_LEFT_CONTROL);
-        Input->KeyLAlt = BuildKeyState(GLFW_KEY_LEFT_ALT);
-        Input->KeySpace = BuildKeyState(GLFW_KEY_SPACE);
-        Input->KeyF1 = BuildKeyState(GLFW_KEY_F1);
-        Input->KeyF2 = BuildKeyState(GLFW_KEY_F2);
-        Input->KeyF3 = BuildKeyState(GLFW_KEY_F3);
-        Input->KeyF11 = BuildKeyState(GLFW_KEY_F11);
-        Input->KeyNumPlus = BuildKeyState(GLFW_KEY_KP_ADD);
-        Input->KeyNumMinus = BuildKeyState(GLFW_KEY_KP_SUBTRACT);
-        Input->KeyNumMultiply = BuildKeyState(GLFW_KEY_KP_MULTIPLY);
-        Input->KeyNumDivide = BuildKeyState(GLFW_KEY_KP_DIVIDE);
-        Input->KeyTilde = BuildKeyState(GLFW_KEY_GRAVE_ACCENT);
-        Input->KeyLeft = BuildKeyState(GLFW_KEY_LEFT);
-        Input->KeyRight = BuildKeyState(GLFW_KEY_RIGHT);
-        Input->KeyUp = BuildKeyState(GLFW_KEY_UP);
-        Input->KeyDown = BuildKeyState(GLFW_KEY_DOWN);
+        for(int i = KEY_FIRST; i <= KEY_LAST; ++i)
+        {
+            Input->Keys[i] = BuildKeyState(i);
+        }
 
         Input->MouseLeft = BuildMouseState(GLFW_MOUSE_BUTTON_LEFT);
         Input->MouseRight = BuildMouseState(GLFW_MOUSE_BUTTON_RIGHT);
@@ -340,7 +321,7 @@ namespace ctx {
     {
         glDeleteProgram(Context->ProgramPostProcess);
         //sound::Destroy();
-        //ResourceFree(&Context->RenderResources);
+        ResourceFree(&Context->RenderResources);
 
         if(Context->Window)
         {
@@ -380,6 +361,14 @@ namespace ctx {
         }
 
         glfwSetCursor(Context->Window, c);
+    }
+
+    void ShowCursor(context *Context, bool Val)
+    {
+        if(Val)
+            glfwSetInputMode(Context->Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        else
+            glfwSetInputMode(Context->Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
     GLenum SetWireframeMode(context *Context, GLenum Mode)

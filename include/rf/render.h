@@ -142,6 +142,7 @@ uint32          *ResourceLoad2DTexture(context *Context, path const Filename, bo
 /// Texture Utilities
 void            BindTexture2D(uint32 TextureID, uint32 TextureUnit);
 void            BindTexture3D(uint32 TextureID, uint32 TextureUnit);
+void            BindCubemap(uint32 TextureID, uint32 TextureUnit);
 uint32          Make2DTexture(void *ImageBuffer, uint32 Width, uint32 Height, uint32 Channels, bool IsFloat,
                     bool FloatHalfPrecision, real32 AnisotropicLevel, int MagFilter, int MinFilter, int WrapS, int WrapT);
 uint32          Make3DTexture(uint32 Width, uint32 Height, uint32 Depth, uint32 Channels, bool IsFloat, bool FloatHalfPrecision,
@@ -166,7 +167,7 @@ mesh            Make3DPlane(vec2i Dimension, uint32 Subdivisions, uint32 Texture
 mesh            MakeUnitSphere(bool MakeAdditionalAttribs = true, real32 TexScale = 1.f);
 
 /// Model Utilities
-bool            ResourceLoadGLTFModel(context *Context, model *Model, path const Filename);
+bool            ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, int AnisotropicLevel);
 
 /// Shader Utilities
 uint32          BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath = NULL);

@@ -88,6 +88,7 @@ namespace ctx
     void *AllocScratch(context *Context, size_t Size);
 
     void SetCursor(context *Context, cursor_type CursorType);
+    void ShowCursor(context *Context, bool Val);
     GLenum SetWireframeMode(context *Context, GLenum Mode = 0);
 }
 }

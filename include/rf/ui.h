@@ -22,6 +22,7 @@ struct font;
 namespace ui {
     col4f const &GetColor(theme_color Col);
     font  *GetFont(theme_font Font);
+    int32 GetFontLineGap(theme_font Font);
 
     void Init(context *Context);
     void ReloadShaders(context *Context);

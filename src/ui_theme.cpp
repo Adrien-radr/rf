@@ -66,6 +66,17 @@ font *GetFont(theme_font Font)
     }
 }
 
+int32 GetFontLineGap(theme_font Font)
+{
+    switch(Font)
+    {
+        case FONT_DEFAULT : return Theme.DefaultFont->LineGap;
+        case FONT_CONSOLE : return Theme.ConsoleFont->LineGap;
+        case FONT_AWESOME : return Theme.AwesomeFont->LineGap;
+        default : return Theme.DefaultFont->LineGap;
+    }
+}
+
 static font *ParseConfigFont(cJSON *root, context *Context, char const *Name, int c0, int cn)
 {
     cJSON *FontInfo = cJSON_GetObjectItem(root, Name);

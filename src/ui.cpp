@@ -143,18 +143,60 @@ bool HasFocus()
 
 void ReloadShaders(context *Context)
 {
-    path VSPath, FSPath;
-    ConcatStrings(VSPath, ctx::GetExePath(Context), "data/shaders/ui_vert.glsl");
-    ConcatStrings(FSPath, ctx::GetExePath(Context), "data/shaders/ui_frag.glsl");
-    Program = BuildShader(Context, VSPath, FSPath);
+    static char const *VSSrc =
+        "#version 400"
+
+        "layout(location=0) in vec3 position;"
+        "layout(location=1) in vec2 texcoord;"
+
+        "uniform mat4 ProjMatrix;"
+
+        "out vec2 v_texcoord;"
+
+        "void main(){"
+        "    v_texcoord = texcoord;"
+        "    gl_Position = ProjMatrix * vec4(position, 1.0);"
+        "}";
+
+    static char const *FSSrc =
+        "#version 400"
+
+        "in vec2 v_texcoord;"
+        "in vec4 v_color;"
+
+        "uniform sampler2D Texture0;"
+        "uniform vec4 Color;"
+
+        "out vec4 frag_color;"
+
+        "void main() {"
+        "    vec4 TexValue = texture(Texture0, v_texcoord);"
+        "    frag_color = Color;"
+        "    frag_color.a *= TexValue.r;"
+        "}";
+
+    static char const *FSTexRGBSrc =
+        "#version 400"
+
+        "in vec2 v_texcoord;"
+        "in vec4 v_color;"
+
+        "uniform sampler2D Texture0;"
+
+        "out vec4 frag_color;"
+
+        "void main()"
+        "{"
+        "    frag_color = texture(Texture0, v_texcoord);"
+        "}";
+
+    Program = BuildShaderFromSource(Context, VSSrc, FSSrc);
     glUseProgram(Program);
     SendInt(glGetUniformLocation(Program, "Texture0"), 0);
     ColorUniformLoc = glGetUniformLocation(Program, "Color");
     ctx::RegisterShader2D(Context, Program);
 
-    ConcatStrings(VSPath, ctx::GetExePath(Context), "data/shaders/ui_vert.glsl");
-    ConcatStrings(FSPath, ctx::GetExePath(Context), "data/shaders/uitexrgb_frag.glsl");
-    ProgramRGBTexture = BuildShader(Context, VSPath, FSPath);
+    ProgramRGBTexture = BuildShaderFromSource(Context, VSSrc, FSTexRGBSrc);
     glUseProgram(ProgramRGBTexture);
     SendInt(glGetUniformLocation(ProgramRGBTexture, "Texture0"), 0);
     ctx::RegisterShader2D(Context, ProgramRGBTexture);

@@ -580,7 +580,7 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
     return Font;
 }
 
-uint32 _CompileShader(context *Context, char *Src, int Type)
+uint32 _CompileShader(context *Context, char const *Src, int Type)
 {
     GLuint Shader = glCreateShader(Type);
 
@@ -609,6 +609,73 @@ uint32 _CompileShader(context *Context, char *Src, int Type)
     return Shader;
 }
 
+uint32 BuildShaderFromSource(context *Context, char const *VSrc, char const *FSrc, char const *GSrc)
+{
+    uint32 ProgramID = glCreateProgram();
+
+    uint32 VShader = _CompileShader(Context, VSrc, GL_VERTEX_SHADER);
+    if(!VShader)
+    {
+        glDeleteProgram(ProgramID);
+        return 0;
+    }
+    uint32 FShader = _CompileShader(Context, FSrc, GL_FRAGMENT_SHADER);
+    if(!VShader)
+    {
+        glDeleteShader(VShader);
+        glDeleteProgram(ProgramID);
+        return 0;
+    }
+
+    uint32 GShader = 0;
+    if(GSrc)
+    {
+        GShader = _CompileShader(Context, GSrc, GL_GEOMETRY_SHADER);
+        if(!GShader)
+        {
+            glDeleteShader(VShader);
+            glDeleteShader(FShader);
+            glDeleteProgram(ProgramID);
+            return 0;
+        }
+    }
+
+    glAttachShader(ProgramID, VShader);
+    glAttachShader(ProgramID, FShader);
+    if(GSrc)
+    {
+        glAttachShader(ProgramID, GShader);
+        glDeleteShader(GShader);
+    }
+
+    glDeleteShader(VShader);
+    glDeleteShader(FShader);
+
+    glLinkProgram(ProgramID);
+
+    GLint Status;
+    glGetProgramiv(ProgramID, GL_LINK_STATUS, &Status);
+
+    if (!Status)
+    {
+        GLint Len;
+        glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &Len);
+
+        GLchar *Log = (GLchar*) ctx::AllocScratch(Context, Len);
+        glGetProgramInfoLog(ProgramID, Len, NULL, Log);
+
+        LogError("Shader Program link error : \n"
+                "-----------------------------------------------------\n"
+                "%s"
+                "-----------------------------------------------------", Log);
+
+        glDeleteProgram(ProgramID);
+        return 0;
+    }
+
+    return ProgramID;
+}
+
 uint32 BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath)
 {
     char *VSrc = NULL, *FSrc = NULL, *GSrc = NULL;
@@ -626,70 +693,7 @@ uint32 BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath)
 
     if(IsValid)
     {
-        ProgramID = glCreateProgram();
-
-        uint32 VShader = _CompileShader(Context, VSrc, GL_VERTEX_SHADER);
-        if(!VShader)
-        {
-            LogError("Failed to build %s Vertex Shader.", VSPath);
-            glDeleteProgram(ProgramID);
-            return 0;
-        }
-        uint32 FShader = _CompileShader(Context, FSrc, GL_FRAGMENT_SHADER);
-        if(!VShader)
-        {
-            LogError("Failed to build %s Vertex Shader.", VSPath);
-            glDeleteShader(VShader);
-            glDeleteProgram(ProgramID);
-            return 0;
-        }
-
-        uint32 GShader = 0;
-        if(GSPath)
-        {
-            GShader = _CompileShader(Context, GSrc, GL_GEOMETRY_SHADER);
-            if(!GShader)
-            {
-                LogError("Failed to build %s Geometry Shader.", GSPath);
-                glDeleteShader(VShader);
-                glDeleteShader(FShader);
-                glDeleteProgram(ProgramID);
-                return 0;
-            }
-        }
-
-        glAttachShader(ProgramID, VShader);
-        glAttachShader(ProgramID, FShader);
-        if(GSPath)
-        {
-            glAttachShader(ProgramID, GShader);
-            glDeleteShader(GShader);
-        }
-
-        glDeleteShader(VShader);
-        glDeleteShader(FShader);
-
-        glLinkProgram(ProgramID);
-
-        GLint Status;
-        glGetProgramiv(ProgramID, GL_LINK_STATUS, &Status);
-
-        if (!Status)
-        {
-            GLint Len;
-            glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &Len);
-
-            GLchar *Log = (GLchar*) ctx::AllocScratch(Context, Len);
-            glGetProgramInfoLog(ProgramID, Len, NULL, Log);
-
-            LogError("Shader Program link error : \n"
-                    "-----------------------------------------------------\n"
-                    "%s"
-                    "-----------------------------------------------------", Log);
-
-            glDeleteProgram(ProgramID);
-            return 0;
-        }
+        ProgramID = BuildShaderFromSource(Context, VSrc, FSrc, GSrc);
     }
 
     return ProgramID;

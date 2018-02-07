@@ -170,6 +170,7 @@ bool            ResourceLoadGLTFModel(context *Context, model *Model, path const
 
 /// Shader Utilities
 uint32          BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath = NULL);
+uint32          BuildShaderFromSource(context *Context, char const *VSrc, char const *FSrc, char const *GSrc = NULL);
 void            SendVec2(uint32 Loc, vec2f value);
 void            SendVec3(uint32 Loc, vec3f value);
 void            SendVec4(uint32 Loc, vec4f value);

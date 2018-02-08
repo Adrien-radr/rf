@@ -1015,10 +1015,6 @@ display_text MakeDisplayText(context *Context, font *Font, char const *Msg, int 
     Text.Texture = Font->AtlasTextureID;
     Text.Color = Color;
 
-    free(Positions);
-    free(Texcoords);
-    free(Indices);
-
     return Text;
 }
 
@@ -1284,12 +1280,6 @@ mesh Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 
     FillVBO(2, 3, GL_FLOAT, (offset+=TexcoordsSize), NormalsSize, Normals);
     FillVBO(3, 4, GL_FLOAT, (offset+=NormalsSize), TangentsSize, Tangents);
     glBindVertexArray(0);
-
-    free(Positions);
-    free(Normals);
-    free(Texcoords);
-    free(Tangents);
-    free(Indices);
 
     return Plane;
 }

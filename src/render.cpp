@@ -1184,10 +1184,48 @@ mesh MakeUnitCube(bool MakeAdditionalAttribs)
 }
 
 // NOTE - Start is Top Left corner. End is Bottom Right corner.
-mesh Make2DQuad(vec2i Start, vec2i End)
+mesh Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions)
 {
     mesh Quad = {};
 
+    uint32 TriangleCount = pow(4, Subdivisions) * 2;
+    Quad.IndexCount = TriangleCount * 3;
+    uint32 VCount1D = pow(2, Subdivisions) + 1;
+    uint32 VertexCount = VCount1D * VCount1D;
+
+    vec2f Rect(abs(End.x-Start.x), abs(End.y-Start.y));
+    vec2f Stride = Rect / (Subdivisions+1);
+    vec2f TexStride = vec2f(1,1) / (Subdivisions+1);
+
+    vec2f *Positions = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));
+    vec2f *Texcoords = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));
+    uint32 *Indices  = (uint32*)ctx::AllocScratch(Context, Quad.IndexCount * sizeof(uint32));
+
+    // vertices ordered from (top left) to (bottom right), line by line as an array
+    for(uint32 j = 0; j < VCount1D; ++j)
+    {
+        for(uint32 i = 0; i < VCount1D; ++i)
+        {
+            Positions[j * VCount1D + i] = vec2f(Start) + vec2f(i * Stride.x, j * Stride.y);
+            Texcoords[j * VCount1D + i] = vec2f(0.f, 1.f) + vec2f(i * TexStride.x, -j * TexStride.y);
+        }
+    }
+
+    for(uint32 j = 0; j < (VCount1D-1); ++j)
+    {
+        for(uint32 i = 0; i < (VCount1D-1); ++i)
+        {
+            uint32 IdxBase = j * (VCount1D-1) +i;
+            Indices[IdxBase * 6 + 0] = (j * VCount1D + i) + 0;
+            Indices[IdxBase * 6 + 1] = (j * VCount1D + i) + VCount1D;
+            Indices[IdxBase * 6 + 2] = (j * VCount1D + i) + VCount1D + 1;
+            Indices[IdxBase * 6 + 3] = (j * VCount1D + i) + 0;
+            Indices[IdxBase * 6 + 4] = (j * VCount1D + i) + VCount1D + 1;
+            Indices[IdxBase * 6 + 5] = (j * VCount1D + i) + 1;
+        }
+    }
+
+#if 0
     vec2f Position[4] =
     {
         vec2f(Start.x, Start.y),
@@ -1203,16 +1241,14 @@ mesh Make2DQuad(vec2i Start, vec2i End)
         vec2f(1, 0),
         vec2f(1, 1),
     };
+#endif
 
-    uint8 Indices[6] = { 0, 1, 2, 0, 2, 3 };
-
-    Quad.IndexCount = 6;
     Quad.IndexType = GL_UNSIGNED_BYTE;
     Quad.VAO = MakeVertexArrayObject();
     Quad.VBO[0] = AddIBO(GL_STATIC_DRAW, sizeof(Indices), Indices);
-    Quad.VBO[1] = AddEmptyVBO(sizeof(Position) + sizeof(Texcoord), GL_STATIC_DRAW);
-    FillVBO(0, 2, GL_FLOAT, 0, sizeof(Position), Position);
-    FillVBO(1, 2, GL_FLOAT, sizeof(Position), sizeof(Texcoord), Texcoord);
+    Quad.VBO[1] = AddEmptyVBO(VertexCount * 2 * sizeof(vec2f), GL_STATIC_DRAW);
+    FillVBO(0, 2, GL_FLOAT, 0, VertexCount * sizeof(vec2f), Positions);
+    FillVBO(1, 2, GL_FLOAT, VertexCount * sizeof(vec2f), VertexCount * sizeof(vec2f), Texcoords);
     glBindVertexArray(0);
 
     return Quad;
@@ -1577,7 +1613,7 @@ uint32 PrecomputeGGXLUT(context *Context, uint32 Width)
     glBindTexture(GL_TEXTURE_2D, GGXLUT);
 
     frame_buffer FBO = MakeFramebuffer(1, vec2i(Width, Width));
-    mesh ScreenQuad = Make2DQuad(vec2i(-1, 1), vec2i(1, -1));
+    mesh ScreenQuad = Make2DQuad(Context, vec2i(-1, 1), vec2i(1, -1));
 
     glBindFramebuffer(GL_FRAMEBUFFER, FBO.FBO);
     glBindRenderbuffer(GL_RENDERBUFFER, FBO.DepthBufferID);

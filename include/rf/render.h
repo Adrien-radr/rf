@@ -162,7 +162,7 @@ void            DestroyMesh(mesh *Mesh);
 void            RenderMesh(mesh *Mesh);
 
 mesh            MakeUnitCube(bool MakeAdditionalAttribs = true);
-mesh            Make2DQuad(vec2i Start, vec2i End);
+mesh            Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions = 0);
 mesh            Make3DPlane(vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic = false);
 mesh            MakeUnitSphere(bool MakeAdditionalAttribs = true, real32 TexScale = 1.f);
 

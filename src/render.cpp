@@ -1193,13 +1193,13 @@ mesh Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions)
     uint32 VCount1D = pow(2, Subdivisions) + 1;
     uint32 VertexCount = VCount1D * VCount1D;
 
-    vec2f Rect(abs(End.x-Start.x), abs(End.y-Start.y));
+    vec2f Rect((End.x-Start.x), (End.y-Start.y));
     vec2f Stride = Rect / (Subdivisions+1);
     vec2f TexStride = vec2f(1,1) / (Subdivisions+1);
 
     vec2f *Positions = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));
     vec2f *Texcoords = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));
-    uint32 *Indices  = (uint32*)ctx::AllocScratch(Context, Quad.IndexCount * sizeof(uint32));
+    uint16 *Indices  = (uint16*)ctx::AllocScratch(Context, Quad.IndexCount * sizeof(uint16));
 
     // vertices ordered from (top left) to (bottom right), line by line as an array
     for(uint32 j = 0; j < VCount1D; ++j)
@@ -1207,7 +1207,7 @@ mesh Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions)
         for(uint32 i = 0; i < VCount1D; ++i)
         {
             Positions[j * VCount1D + i] = vec2f(Start) + vec2f(i * Stride.x, j * Stride.y);
-            Texcoords[j * VCount1D + i] = vec2f(0.f, 1.f) + vec2f(i * TexStride.x, -j * TexStride.y);
+            Texcoords[j * VCount1D + i] = vec2f(0.f, 1.f) + vec2f(i * TexStride.x, j * -TexStride.y);
         }
     }
 
@@ -1225,27 +1225,9 @@ mesh Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions)
         }
     }
 
-#if 0
-    vec2f Position[4] =
-    {
-        vec2f(Start.x, Start.y),
-        vec2f(Start.x, End.y),
-        vec2f(End.x, End.y),
-        vec2f(End.x, Start.y)
-    };
-
-    vec2f Texcoord[4] =
-    {
-        vec2f(0, 1),
-        vec2f(0, 0),
-        vec2f(1, 0),
-        vec2f(1, 1),
-    };
-#endif
-
-    Quad.IndexType = GL_UNSIGNED_BYTE;
+    Quad.IndexType = GL_UNSIGNED_SHORT;
     Quad.VAO = MakeVertexArrayObject();
-    Quad.VBO[0] = AddIBO(GL_STATIC_DRAW, sizeof(Indices), Indices);
+    Quad.VBO[0] = AddIBO(GL_STATIC_DRAW, Quad.IndexCount * sizeof(uint16), Indices);
     Quad.VBO[1] = AddEmptyVBO(VertexCount * 2 * sizeof(vec2f), GL_STATIC_DRAW);
     FillVBO(0, 2, GL_FLOAT, 0, VertexCount * sizeof(vec2f), Positions);
     FillVBO(1, 2, GL_FLOAT, VertexCount * sizeof(vec2f), VertexCount * sizeof(vec2f), Texcoords);

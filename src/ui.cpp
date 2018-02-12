@@ -1,6 +1,8 @@
 #include "ui.h"
+#include "ui_theme.h"
 #include "utils.h"
 #include "context.h"
+
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // All functions accept positions and sizes in absolute coordinate with the coordinate
@@ -13,7 +15,6 @@ namespace rf {
 #define UI_PARENT_SIZE 10
 
 namespace ui {
-#include "ui_theme.cpp"
 
 static context *Context;
 static input   *Input;

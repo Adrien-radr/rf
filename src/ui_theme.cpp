@@ -1,30 +1,9 @@
-struct ui_theme
-{
-    col4f Red;
-    col4f Green;
-    col4f Blue;
-    col4f Black;
-    col4f White;
+#include "ui_theme.h"
+#include "context.h"
+#include "utils.h"
 
-    col4f PanelBG;
-    col4f PanelFG;
-    col4f TitlebarBG;
-    col4f BorderBG;
-    col4f ConsoleBG;
-    col4f ConsoleFG;
-    col4f SliderBG;
-    col4f SliderFG;
-    col4f ButtonBG;
-    col4f ButtonPressedBG;
-    col4f ProgressbarBG;
-    col4f ProgressbarFG;
-
-    col4f DebugFG;
-
-    font  *DefaultFont;
-    font  *ConsoleFont;
-    font  *AwesomeFont;
-};
+namespace rf {
+namespace ui {
 
 ui_theme Theme;
 ui_theme DefaultTheme;
@@ -121,7 +100,7 @@ static void ParseUIConfigRoot(ui_theme *DstTheme, cJSON *root, context *Context)
     DstTheme->AwesomeFont = ParseConfigFont(root, Context, "AwesomeFont", ICON_MIN_FA, 1+ICON_MAX_FA);
 }
 
-static void ParseDefaultUIConfig(context *Context)
+void ParseDefaultUIConfig(context *Context)
 {
     path DefaultConfigPath;
     ConcatStrings(DefaultConfigPath, ctx::GetExePath(Context), "default_ui_config.json");
@@ -153,7 +132,7 @@ static void ParseDefaultUIConfig(context *Context)
     }
 }
 
-static void ParseUIConfig(context *Context, path const ConfigPath)
+void ParseUIConfig(context *Context, path const ConfigPath)
 {
     void *Content = ReadFileContents(Context, ConfigPath, 0);
     if(Content)
@@ -183,3 +162,5 @@ static void ParseUIConfig(context *Context, path const ConfigPath)
     }
 }
 
+}
+}

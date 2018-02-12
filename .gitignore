@@ -9,4 +9,5 @@
 *.a
 *.lib
 bin/.vs
+obj
 tags

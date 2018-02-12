@@ -1028,19 +1028,6 @@ void DestroyDisplayText(display_text *Text)
 ////////////////////////////////////////////////////////////////////////
 // NOTE - Primitive builders
 ////////////////////////////////////////////////////////////////////////
-static void BasisFrisvad(vec3f const &n, vec3f &T, vec3f &BT)
-{
-    if(n.y < -0.9999999f) // Handle the singularity
-    {
-        T = vec3f(-1.0f, 0.0f, 0.0f);
-        BT = vec3f(0.0f, 0.0f, -1.0f);
-        return;
-    }
-    float a = 1.0f/(1.0f + n.y);
-    float b = -n.x*n.z*a;
-    T = vec3f(1.0f - n.x*n.x*a, -n.x, b);
-    BT = vec3f(b, -n.z, 1.0f - n.z*n.z*a);
-}
 
 mesh MakeUnitCube(bool MakeAdditionalAttribs)
 {
@@ -1619,5 +1606,3 @@ uint32 PrecomputeGGXLUT(context *Context, uint32 Width)
     return GGXLUT;
 }
 }
-// ADDITIONAL IMPLEMENTATION
-#include "model.cpp"

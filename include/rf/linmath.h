@@ -1565,4 +1565,19 @@ inline vec2f CartesianToSpherical(vec3f const &V)
 {
     return vec2f(atan2f(sqrtf(Square(V.x) + Square(V.z)), V.y), atan2f(V.z, V.x));
 }
+
+// Creates a Frame around the normal N, returning its tangent and bitangent as out-params
+inline void BasisFrisvad(vec3f const &N, vec3f &T, vec3f &BT)
+{
+    if(N.y < -0.9999999f) // Handle the singularity
+    {
+        T = vec3f(-1.0f, 0.0f, 0.0f);
+        BT = vec3f(0.0f, 0.0f, -1.0f);
+        return;
+    }
+    float a = 1.0f/(1.0f + N.y);
+    float b = -N.x*N.z*a;
+    T = vec3f(1.0f - N.x*N.x*a, -N.x, b);
+    BT = vec3f(b, -N.z, 1.0f - N.z*N.z*a);
+}
 #endif

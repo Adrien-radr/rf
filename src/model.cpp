@@ -1,3 +1,6 @@
+#include "context.h"
+#include "utils.h"
+
 #define TINYGLTF_IMPLEMENTATION
 #include "tiny_gltf.h"
 

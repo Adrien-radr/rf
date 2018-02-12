@@ -11,3 +11,4 @@
 bin/.vs
 obj
 tags
+*.make

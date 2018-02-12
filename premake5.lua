@@ -23,7 +23,8 @@ workspace "rf"
 project "glfw3"
     kind "StaticLib"
     includedirs { "ext/glfw/include" }
-    files { "ext/glfw/src/omesa_context.*", "ext/glfw/src/vulkan.c", 
+    targetdir "lib/"
+    files { "ext/glfw/src/osmesa_context.*", "ext/glfw/src/vulkan.c", "ext/glfw/src/egl_context.*",
             "ext/glfw/src/internal.h", "ext/glfw/src/context.c", "ext/glfw/src/init.c", "ext/glfw/src/input.c",
             "ext/glfw/src/monitor.c", "ext/glfw/src/window.c" }
 
@@ -33,7 +34,7 @@ project "glfw3"
         --files { "ext/glfw/src/wgl_context.*", "ext/glfw/src/win32_**", "ext/glfw/src/egl_context.*" }
     --filter { "system:unix" }
         defines { "_GLFW_X11" }
-        files { "ext/glfw/src/x11_**", "ext/glfw/src/glx**" }
+        files { "ext/glfw/src/x11_**", "ext/glfw/src/glx**", "ext/glfw/src/linux_joystick.c", "ext/glfw/src/posix*", "ext/glfw/src/xkb_unicode.c" }
 
 project "rf"
     kind "StaticLib"

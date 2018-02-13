@@ -375,6 +375,13 @@ inline vec3<T> Normalize(const vec3<T> &v)
 }
 
 template<typename T>
+inline vec3<T> Lerp(const vec3<T> &A, const vec3<T> &B, float t)
+{
+    vec3<T> C = (B - A) * t;
+    return vec3<T>(A + C);
+}
+
+template<typename T>
 class col3 : public vec3<T>
 {
 public:
@@ -424,13 +431,6 @@ class frame
     vec3<T> vy;
     vec3<T> vz;
 };
-/*
-
-void vec3_lerp(vec3 r, vec3 a, vec3 b, float t) {
-	for(int i = 0; i < 3; ++i)
-		r[i] = a[i] * (1.f-t) + b[i] * t;
-}
-*/
 template<typename T>
 class vec4
 {

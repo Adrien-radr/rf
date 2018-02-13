@@ -1175,14 +1175,16 @@ mesh Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions)
 {
     mesh Quad = {};
 
-    uint32 TriangleCount = pow(4, Subdivisions) * 2;
+    uint32 QuadCount1D = pow(2, Subdivisions);
+    uint32 QuadCount = QuadCount1D * QuadCount1D;
+    uint32 TriangleCount = QuadCount * 2;
     Quad.IndexCount = TriangleCount * 3;
-    uint32 VCount1D = pow(2, Subdivisions) + 1;
+    uint32 VCount1D = QuadCount1D + 1;
     uint32 VertexCount = VCount1D * VCount1D;
 
     vec2f Rect((End.x-Start.x), (End.y-Start.y));
-    vec2f Stride = Rect / (Subdivisions+1);
-    vec2f TexStride = vec2f(1,1) / (Subdivisions+1);
+    vec2f Stride = Rect / QuadCount1D;
+    vec2f TexStride = vec2f(1,1) / QuadCount1D;
 
     vec2f *Positions = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));
     vec2f *Texcoords = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));

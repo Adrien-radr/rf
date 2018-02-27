@@ -13,6 +13,8 @@
 // Platform
 #if defined(_WIN32) || defined(_WIN64)
 #   define RF_WIN32 1
+#   define NOMINMAX 1
+#   include <Windows.h>
 #ifdef LIBEXPORT
 #   define DLLEXPORT extern "C" __declspec(dllexport)
 #else

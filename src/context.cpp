@@ -198,9 +198,11 @@ namespace ctx {
                 GLEWValid = (GLEW_OK == glewInit());
                 if(GLEWValid)
                 {
+                    GLubyte const *GLVendor = glGetString(GL_VENDOR);
                     GLubyte const *GLRenderer = glGetString(GL_RENDERER);
                     GLubyte const *GLVersion = glGetString(GL_VERSION);
-                    LogInfo("GL Renderer %s, %s", GLRenderer, GLVersion);
+                    LogInfo("GL Renderer %s, %s, %s", GLVendor, GLRenderer, GLVersion);
+                    LogInfo("GLSL %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
                     int MaxLayers;
                     glGetIntegerv(GL_MAX_SPARSE_ARRAY_TEXTURE_LAYERS, &MaxLayers);
@@ -224,10 +226,13 @@ namespace ctx {
                     glClearColor(Context->ClearColor.x, Context->ClearColor.y, Context->ClearColor.z, Context->ClearColor.w);
 
                     glEnable(GL_CULL_FACE);
-                    glCullFace(GL_BACK);
                     glFrontFace(GL_CCW);
+                    glCullFace(GL_BACK);
+
+                    glDisable(GL_SCISSOR_TEST);
 
                     glEnable(GL_DEPTH_TEST);
+                    glDepthMask(1);
                     glDepthFunc(GL_LESS);
 
                     glEnable(GL_BLEND);

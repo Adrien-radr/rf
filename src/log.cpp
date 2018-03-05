@@ -31,6 +31,11 @@ namespace log {
         strncat(CurrDate + WrittenChar, CurrTime, 64);
 
         LogInfo("Radar Foundation Log (RF %d.%d.%d)", RF_MAJOR, RF_MINOR, RF_PATCH);
+#ifdef DEBUG
+        LogInfo("Debug Build");
+#else
+        LogInfo("Release Build");
+#endif
         LogInfo("%s", CurrDate);
         LogInfo( "========================" );
     }

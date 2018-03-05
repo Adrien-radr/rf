@@ -5,9 +5,9 @@
 
 namespace rf {
 
-bool static FramePressedKeys[350] = {};
-bool static FrameReleasedKeys[350] = {};
-bool static FrameDownKeys[350] = {};
+bool static FramePressedKeys[KEY_LAST+1] = {};
+bool static FrameReleasedKeys[KEY_LAST+1] = {};
+bool static FrameDownKeys[KEY_LAST+1] = {};
 
 int  static FrameModKeys = 0;
 
@@ -313,7 +313,7 @@ namespace ctx {
         // Get Player controls
         for(int i = KEY_FIRST; i <= KEY_LAST; ++i)
         {
-            Input->Keys[i] = BuildKeyState(i);
+            Input->Keys[(int)i] = BuildKeyState(i);
         }
 
         Input->MouseLeft = BuildMouseState(GLFW_MOUSE_BUTTON_LEFT);

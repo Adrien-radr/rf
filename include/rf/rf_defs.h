@@ -73,7 +73,7 @@ struct input
     int32  MouseDY;
     int32  MouseDZ; // wheel
 
-    key_state Keys[KEY_LAST-KEY_FIRST];
+    key_state Keys[KEY_LAST+1];
 
     mouse_state MouseLeft;
     mouse_state MouseRight;

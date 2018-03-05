@@ -1,5 +1,5 @@
 workspace "rf"
-    configurations { "Debug", "Release" }
+    configurations { "Debug", "Release", "ReleaseDbg" }
     platforms { "Windows", "Unix" }
     language "C++"
     cppdialect "C++11"
@@ -11,6 +11,10 @@ workspace "rf"
 
     filter "configurations:Release"
         optimize "On"
+
+    filter "configurations:ReleaseDbg"
+        optimize "On"
+        buildoptions { "-fno-omit-frame-pointer" }
 
     filter "platforms:Windows"
         system "windows"
@@ -28,6 +32,9 @@ project "glfw3"
 
     filter "configurations:Debug"
         targetname "glfw3_d"
+
+    filter "configurations:ReleaseDbg"
+        targetname "glfw3_p"
 
     filter "configurations:Release"
         targetname "glfw3"
@@ -54,6 +61,9 @@ project "rf"
 
     filter "configurations:Debug"
         targetname "rf_d"
+
+    filter "configurations:ReleaseDbg"
+        targetname "rf_p"
 
     filter "configurations:Release"
         targetname "rf"

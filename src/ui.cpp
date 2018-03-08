@@ -129,8 +129,6 @@ void Init(context *Context)
     MouseHold = NULL;
     ResizeHold = false;
 
-    ParseDefaultUIConfig(Context);
-
     path ConfigPath;
     ConcatStrings(ConfigPath, ctx::GetExePath(Context), "ui_config.json");
     ParseUIConfig(Context, ConfigPath);

@@ -129,7 +129,10 @@ void Init(context *Context)
     MouseHold = NULL;
     ResizeHold = false;
 
-    path ConfigPath;
+	// Parse default ui first, in case the user ui config is absent or incomplete
+	ParseDefaultUIConfig( Context );
+
+	path ConfigPath;
     ConcatStrings(ConfigPath, ctx::GetExePath(Context), "ui_config.json");
     ParseUIConfig(Context, ConfigPath);
 }

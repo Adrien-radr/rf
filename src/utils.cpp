@@ -35,7 +35,7 @@ void *ReadFileContentsNoContext(path const Filename, int32 *FileSize)
             size_t Read = fread(Contents, Size, 1, fp);
             if(Read != 1)
             {
-                LogError("File Open Error [%s] : Reading error or EOF reached.", Filename);
+                printf("File Open Error [%s] : Reading error or EOF reached.\n", Filename);
             }
             Contents[Size] = 0;
             if(FileSize)
@@ -45,13 +45,13 @@ void *ReadFileContentsNoContext(path const Filename, int32 *FileSize)
         }
         else
         {
-            LogError("File Open Error [%s] : fseek not 0.", Filename);
+			printf("File Open Error [%s] : fseek not 0.\n", Filename);
         }
         fclose(fp);
     }
     else
     {
-        LogError("File Open Error [%s] : Couldn't open file.", Filename);
+		printf("File Open Error [%s] : Couldn't open file.\n", Filename);
     }
 
     return (void*)Contents;
@@ -278,5 +278,5 @@ void PlatformSleep(uint32 MillisecondsToSleep)
     nanosleep(&TS, NULL);
 }
 #endif
-}
 #endif
+}

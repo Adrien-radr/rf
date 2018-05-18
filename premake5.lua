@@ -51,7 +51,8 @@ project "glfw3"
         files { "ext/glfw/src/wgl_context.*", "ext/glfw/src/win32_**", "ext/glfw/src/egl_context.*" }
     filter { "platforms:Unix" }
         defines { "_GLFW_X11" }
-        files { "ext/glfw/src/x11_**", "ext/glfw/src/glx**", "ext/glfw/src/linux_joystick.c", "ext/glfw/src/posix*", "ext/glfw/src/xkb_unicode.c" }
+        files { "ext/glfw/src/x11_**", "ext/glfw/src/glx**", "ext/glfw/src/linux_joystick.c", "ext/glfw/src/posix*", 
+                "ext/glfw/src/xkb_unicode.c" }
 
     filter {}
 
@@ -70,7 +71,7 @@ project "rf"
 
     filter {}
 
-    includedirs { "include/rf", "ext", "ext/glew/include", "ext/cjson" }
+    includedirs { "include/rf", "ext", "ext/glew/include", "ext/cjson", "ext/glfw/include" }
     files { "src/**.cpp", "ext/glew/src/glew.c", "ext/stb.cpp", "ext/cjson/cJSON.c", "include/rf/**.h" }
     defines { "GLEW_STATIC", "_CRT_SECURE_NO_WARNINGS" }
     links { "glfw3" }

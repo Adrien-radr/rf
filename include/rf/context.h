@@ -36,6 +36,8 @@ struct context
 
     render_resources RenderResources;
 
+	system_info SysInfo;
+
     GLFWwindow *Window;
 
     mat4f ProjectionMatrix3D;

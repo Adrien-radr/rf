@@ -144,8 +144,8 @@ namespace ctx {
             Context->WindowHeight = ResizeHeight;
             Context->ProjectionMatrix3D = mat4f::Perspective(Context->FOV, 
                     Context->WindowWidth / (real32)Context->WindowHeight, Context->NearPlane, Context->FarPlane);
-            Context->ProjectionMatrix2D = mat4f::Ortho(0, Context->WindowWidth, 0, Context->WindowHeight, 0.1f, 1.f);
-            Context->WindowSizeLogLevel = log2(Max(Context->WindowHeight, Context->WindowWidth));
+            Context->ProjectionMatrix2D = mat4f::Ortho(0.f, (float)Context->WindowWidth, 0.f, (float)Context->WindowHeight, 0.1f, 1.f);
+            Context->WindowSizeLogLevel = log2f((float)Max(Context->WindowHeight, Context->WindowWidth));
 
             UpdateShaderProjection(Context);
             return true;
@@ -166,6 +166,12 @@ namespace ctx {
         // Init log
         log::Init(Context);
 
+		GetSystemInfo( Context->SysInfo );
+		LogInfo( "Windows %u.%u.%u", Context->SysInfo.OSVersion.Major, Context->SysInfo.OSVersion.Minor, Context->SysInfo.OSVersion.Build );
+		LogInfo( "CPU : [%s] %s, %d cores at %.2lf GHz", Context->SysInfo.CPUName, Context->SysInfo.CPUBrand, Context->SysInfo.CPUCountLogical, Context->SysInfo.CPUGHz );
+		LogInfo( "Using %d MB RAM", Context->SysInfo.SystemMB );
+		LogInfo( "SSE Support : %s", Context->SysInfo.SSESupport ? "yes" : "no" );
+
         GLFWValid = glfwInit();
         if(Context && GLFWValid)
         {
@@ -183,7 +189,7 @@ namespace ctx {
                 glfwMakeContextCurrent(Context->Window);
 
                 // TODO - Only in windowed mode for debug
-                glfwSetWindowPos(Context->Window, Desc->WindowX, Desc->WindowY);
+                glfwSetWindowPos(Context->Window, (int)Desc->WindowX, (int)Desc->WindowY);
                 glfwSwapInterval(Desc->VSync);
 
                 glfwSetKeyCallback(Context->Window, ProcessKeyboardEvent);

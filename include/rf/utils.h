@@ -14,6 +14,14 @@ size_t  GetDateTime(char *Dst, size_t DstSize, char const *Fmt);
 /// Ask the running thread to sleep for an amount of ms
 void    PlatformSleep(uint32 MillisecondsToSleep);
 
+/// Retrieve system information from the OS (refer to system_info struct)
+void	GetSystemInfo( system_info &SysInfo );
+
+/// Get and set the system's clipboard content
+/// Returns a char string that HAS TO BE FREED by the caller
+char	*GetClipboardContent();
+void	SetClipboardContent( char *Content );
+
 /// Concatenate 2 strings so that Dst = Str1 + Str2 (in std::string terms)
 void    ConcatStrings(path Dst, path const Str1, path const Str2);
 
@@ -45,6 +53,10 @@ size_t  UTF8Len(char const *Str, size_t MaxChar = -1);
 
 /// Converts the UTF8 string to an unsigned integers (e.g. for indexing)
 uint16  UTF8CharToInt(char const *Str, size_t *CharAdvance);
+
+/// Returns a pointer to the first non-whitespace character in a pointed string buffer
+/// This does not erase anything
+char *GetFirstNonWhitespace( char *Src );
 
 template<typename T>
 inline T JSON_Get(cJSON *Root, char const *ValueName, T const &DefaultValue)

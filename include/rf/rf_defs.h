@@ -61,6 +61,30 @@ struct context;
 typedef uint8 key_state;
 typedef uint8 mouse_state;
 
+struct os_version
+{
+	unsigned Major;
+	unsigned Minor;
+	unsigned Build;
+};
+
+struct system_info
+{
+	os_version OSVersion;
+
+	int CPUCountLogical;
+	int CPUCountPhysical;
+	double CPUGHz;
+	int SystemMB;
+	bool SSESupport;
+	bool x64;
+
+	char CPUName[0x20];
+	char *CPUBrand;
+	char _CPUBrand[0x40];
+	char GPUDesc[1024];
+};
+
 // Contains all input for a frame
 struct input
 {

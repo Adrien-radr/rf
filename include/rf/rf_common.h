@@ -61,9 +61,8 @@ typedef char path[MAX_PATH];
 #define D(x)
 #endif
 
-#define Kilobytes(num) (1024LL*(num))
-#define Megabytes(num) (1024LL*Kilobytes(num))
-#define Gigabytes(num) (1024LL*Megabytes(num))
-
+#define KB (1024llu)
+#define MB (1024llu * KB)
+#define GB (1024llu * MB)
 
 #endif

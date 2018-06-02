@@ -8,23 +8,23 @@
 
 /// Common functions & math
 #ifndef M_PI
-#define M_PI 3.14159265358
+#define M_PI 3.14159265358f
 #endif
 #ifndef M_PI_OVER_TWO
-#define M_PI_OVER_TWO 1.5707963267
-#define M_PI_OVER_FOUR 0.78539816339
+#define M_PI_OVER_TWO 1.5707963267f
+#define M_PI_OVER_FOUR 0.78539816339f
 
-#define M_TWO_PI 6.28318530718
-#define M_FOUR_PI 12.5663706144
+#define M_TWO_PI 6.28318530718f
+#define M_FOUR_PI 12.5663706144f
 
-#define M_INV_PI 0.31830988618
-#define M_INV_TWO_PI 0.15915494309
-#define M_INV_FOUR_PI 0.07957747154 
+#define M_INV_PI 0.31830988618f
+#define M_INV_TWO_PI 0.15915494309f
+#define M_INV_FOUR_PI 0.07957747154f
 #endif
 // deg 2 rad : d * PI / 180
-#define DEG2RAD 0.01745329252
+#define DEG2RAD 0.01745329252f
 // rad 2 deg : d * 180 / PI
-#define RAD2DEG 57.2957795
+#define RAD2DEG 57.2957795f
 
 #define Square(num) ((num)*(num))
 #if 1

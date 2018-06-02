@@ -10,7 +10,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 namespace rf {
-#define UI_STACK_SIZE Megabytes(8)
+#define UI_STACK_SIZE (8*MB)
 #define UI_MAX_PANELS 32
 #define UI_PARENT_SIZE 10
 

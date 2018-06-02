@@ -182,8 +182,44 @@ uint16 UTF8CharToInt(char const *Str, size_t *CharAdvance)
     return Unicode;
 }
 
+char *GetFirstNonWhitespace( char *Src )
+{
+	while ( Src && *Src && *Src == ' ' ) Src++;
+	return Src;
+}
+
 /// Platform dependent functions
 #ifdef RF_WIN32
+#include <Windows.h>
+#include <intrin.h>
+#include <powerbase.h>
+
+struct cpu_info
+{
+	int CPUCount;
+	double CPUGHz;
+	bool x64;
+	char CPUVendor[0x20];
+	char CPUBrand[0x40];
+};
+
+struct mem_status
+{
+	size_t availVirtual;
+	size_t totalVirtual;
+	size_t totalPhysical;
+};
+
+// not in the SDK anymore, redefining as per MSDN
+typedef struct _PROCESSOR_POWER_INFORMATION {
+	ULONG Number;
+	ULONG MaxMhz;
+	ULONG CurrentMhz;
+	ULONG MhzLimit;
+	ULONG MaxIdleState;
+	ULONG CurrentIdleState;
+} PROCESSOR_POWER_INFORMATION, *PPROCESSOR_POWER_INFORMATION;
+
 // NOTE : expect a MAX_PATH string as Path
 void GetExecutablePath(path Path)
 {
@@ -206,6 +242,186 @@ void PlatformSleep(uint32 MillisecondsToSleep)
 {
     Sleep(MillisecondsToSleep);
 }
+
+static bool CheckSSESupport()
+{
+	int CPUInfo[4];
+	__cpuid( CPUInfo, 1 );
+	return CPUInfo[3] & ( 1 << 25 ) || false;
+}
+
+static void GetCpuInfo( cpu_info &CPUInfo )
+{
+	int cpuInfo[4] = { -1 };
+	__cpuid( cpuInfo, 0 );
+	int nIDs = cpuInfo[0];
+
+
+	memset( CPUInfo.CPUVendor, 0, sizeof( CPUInfo.CPUVendor ) );
+	*reinterpret_cast<int*>( CPUInfo.CPUVendor ) = cpuInfo[1];
+	*reinterpret_cast<int*>( CPUInfo.CPUVendor + 4 ) = cpuInfo[3];
+	*reinterpret_cast<int*>( CPUInfo.CPUVendor + 8 ) = cpuInfo[2];
+
+	if ( !strcmp( CPUInfo.CPUVendor, "GenuineIntel" ) )
+	{
+		memcpy( CPUInfo.CPUVendor, "Intel", 6 );
+	}
+	else if ( !strcmp( CPUInfo.CPUVendor, "AuthenticAMD" ) )
+	{
+		memcpy( CPUInfo.CPUVendor, "AMD", 4 );
+	}
+	else
+	{
+		memcpy( CPUInfo.CPUVendor, "Unknown CPU", 13 );
+	}
+
+	__cpuid( cpuInfo, 0x80000000 );
+	int nExIDs = cpuInfo[0];
+
+	memset( CPUInfo.CPUBrand, 0, sizeof( CPUInfo.CPUBrand ) );
+
+	if ( nExIDs >= 0x80000004 )
+	{
+		__cpuid( cpuInfo, 0x80000002 );
+		memcpy( CPUInfo.CPUBrand, cpuInfo, 4 * sizeof( int ) );
+		__cpuid( cpuInfo, 0x80000003 );
+		memcpy( CPUInfo.CPUBrand + 16, cpuInfo, 4 * sizeof( int ) );
+		__cpuid( cpuInfo, 0x80000004 );
+		memcpy( CPUInfo.CPUBrand + 32, cpuInfo, 4 * sizeof( int ) );
+	}
+
+
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo( &sysinfo );
+	CPUInfo.CPUCount = sysinfo.dwNumberOfProcessors;
+
+	size_t PowerInfoBufSize = sysinfo.dwNumberOfProcessors * sizeof( PROCESSOR_POWER_INFORMATION );
+	PROCESSOR_POWER_INFORMATION *PowerInfoBuf = (PROCESSOR_POWER_INFORMATION*)malloc( PowerInfoBufSize );
+	LONG ntpi = CallNtPowerInformation( ProcessorInformation, NULL, 0, PowerInfoBuf, (ULONG)PowerInfoBufSize );
+
+	CPUInfo.CPUGHz = PowerInfoBuf[0].MaxMhz * 0.001;
+
+	free( PowerInfoBuf );
+}
+
+static void QueryMemStatus( mem_status *mstat )
+{
+	MEMORYSTATUSEX statusex;
+	HMODULE hm;
+
+	hm = GetModuleHandle( L"kernel32.dll" );
+	bool ( WINAPI *MemoryStatusEx ) ( IN OUT LPMEMORYSTATUSEX lpBuf );
+	if ( hm )
+	{
+		MemoryStatusEx = ( bool( WINAPI* )( IN OUT LPMEMORYSTATUSEX ) ) GetProcAddress( hm, "GlobalMemoryStatusEx" );
+		if ( MemoryStatusEx )
+		{
+			statusex.dwLength = sizeof( statusex );
+			if ( MemoryStatusEx( &statusex ) )
+			{
+				mstat->availVirtual = statusex.ullAvailVirtual;
+				mstat->totalVirtual = statusex.ullTotalVirtual;
+				mstat->totalPhysical = statusex.ullTotalPhys;
+				return;
+			}
+		}
+	}
+}
+
+static void GetOSVersion( os_version *OsVersion )
+{
+	HMODULE hm = GetModuleHandleW( L"ntdll.dll" );
+
+	RTL_OSVERSIONINFOW rovi;
+	memset( &rovi, 0, sizeof( rovi ) );
+
+	typedef NTSTATUS( WINAPI *RtlGetVersionPtr )( PRTL_OSVERSIONINFOW );
+	if ( hm )
+	{
+		RtlGetVersionPtr Function = (RtlGetVersionPtr)GetProcAddress( hm, "RtlGetVersion" );
+		if ( Function )
+		{
+			Function( &rovi );
+		}
+	}
+	OsVersion->Major = rovi.dwMajorVersion;
+	OsVersion->Minor = rovi.dwMinorVersion;
+	OsVersion->Build = rovi.dwBuildNumber;
+}
+
+void GetSystemInfo( system_info &SysInfo )
+{
+	memset( &SysInfo, 0, sizeof( system_info ) );
+
+	cpu_info CPUInfo;
+	GetCpuInfo( CPUInfo );
+
+	mem_status memstat = { 0 };
+	QueryMemStatus( &memstat );
+	int SystemMemMB = static_cast<int>( ceilf( memstat.totalPhysical / float( MB ) ) );
+
+	bool SSE = CheckSSESupport();
+
+	SysInfo.CPUCountLogical = CPUInfo.CPUCount;
+	SysInfo.CPUGHz = CPUInfo.CPUGHz;
+	SysInfo.SystemMB = SystemMemMB;
+	SysInfo.SSESupport = SSE;
+	memcpy( SysInfo.CPUName, CPUInfo.CPUVendor, sizeof( SysInfo.CPUName ) );
+	memcpy( SysInfo._CPUBrand, CPUInfo.CPUBrand, sizeof( SysInfo._CPUBrand ) );
+	SysInfo.CPUBrand = SysInfo._CPUBrand;
+	SysInfo.CPUBrand = GetFirstNonWhitespace( SysInfo.CPUBrand );
+	GetOSVersion( &SysInfo.OSVersion );
+}
+
+char *GetClipboardContent()
+{
+	char *content = nullptr;
+	char *tmpClipboardText;
+
+	if ( OpenClipboard( NULL ) != 0 )
+	{
+		HANDLE hc;
+
+		if ( ( hc = GetClipboardData( CF_TEXT ) ) != 0 )
+		{
+			tmpClipboardText = (char*)GlobalLock( hc );
+			if ( tmpClipboardText )
+			{
+				content = (char*)malloc( GlobalSize( hc ) + 1 );
+				strncpy( content, tmpClipboardText, GlobalSize( hc ) );
+				GlobalUnlock( hc );
+				// remove trailing
+				//strtok( content, "\n\b\r" );
+			}
+		}
+		CloseClipboard();
+	}
+
+	return content;
+}
+
+void SetClipboardContent( char *Content )
+{
+	if ( OpenClipboard( NULL ) != 0 )
+	{
+		EmptyClipboard();
+		HGLOBAL ContentCpy = GlobalAlloc( GMEM_MOVEABLE, strlen( Content ) + 1 );
+		if ( !ContentCpy )
+		{
+			CloseClipboard();
+			return;
+		}
+
+		LPSTR Str = (LPSTR)GlobalLock( ContentCpy );
+		strcpy( Str, Content );
+		GlobalUnlock( ContentCpy );
+
+		SetClipboardData( CF_TEXT, ContentCpy );
+
+		CloseClipboard();
+	}
+}
+
 #else
 #ifdef RF_UNIX
 #include <stdio.h>
@@ -244,7 +460,7 @@ static void CopyFile(path const Src, path const Dst)
     // NOTE - No CopyFile on Linux : open Src, read it and copy it in Dst
     int SFD = open(Src, O_RDONLY);
     int DFD = open(Dst, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
-    char FileBuf[Kilobytes(4)];
+    char FileBuf[4 * KB];
 
     // Read until we can't anymore
     while(1)
@@ -277,6 +493,27 @@ void PlatformSleep(uint32 MillisecondsToSleep)
     TS.tv_nsec = (MillisecondsToSleep % 1000) * 1000000;
     nanosleep(&TS, NULL);
 }
+
+void GetSystemInfo( system_info &SysInfo )
+{
+	// TODO - Unix Version
+	memset( &SysInfo, 0, sizeof( system_info ) );
+	printf( "GetSystemInfo not implemented on Unix.\n" );
+}
+
+char *GetClipboardContent()
+{
+	// TODO - Unix Version
+	printf( "GetClipboardContent not implemented on Unix.\n" );
+	return nullptr;
+}
+
+void SetClipboardContent( char *Content )
+{
+	// TODO - Unix Version
+	printf( "SetClipboardContent not implemented on Unix.\n" );
+}
+
 #endif
 #endif
 }

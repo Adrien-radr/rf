@@ -45,7 +45,6 @@ project "glfw3"
             "ext/glfw/src/internal.h", "ext/glfw/src/context.c", "ext/glfw/src/init.c", "ext/glfw/src/input.c",
             "ext/glfw/src/monitor.c", "ext/glfw/src/window.c" }
 
-    -- This filter thing doesnt work on unix it seems...
     filter { "platforms:Windows" }
         defines { "_GLFW_WIN32", "_CRT_SECURE_NO_WARNINGS" }
         files { "ext/glfw/src/wgl_context.*", "ext/glfw/src/win32_**", "ext/glfw/src/egl_context.*" }

@@ -167,7 +167,7 @@ namespace ctx {
         log::Init(Context);
 
 		GetSystemInfo( Context->SysInfo );
-		LogInfo( "Windows %u.%u.%u", Context->SysInfo.OSVersion.Major, Context->SysInfo.OSVersion.Minor, Context->SysInfo.OSVersion.Build );
+		LogInfo( "%s %u.%u.%u", Context->SysInfo.OSVersion.OSName, Context->SysInfo.OSVersion.Major, Context->SysInfo.OSVersion.Minor, Context->SysInfo.OSVersion.Build );
 		LogInfo( "CPU : [%s] %s, %d cores at %.2lf GHz", Context->SysInfo.CPUName, Context->SysInfo.CPUBrand, Context->SysInfo.CPUCountLogical, Context->SysInfo.CPUGHz );
 		LogInfo( "Using %d MB RAM", Context->SysInfo.SystemMB );
 		LogInfo( "SSE Support : %s", Context->SysInfo.SSESupport ? "yes" : "no" );

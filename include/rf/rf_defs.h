@@ -63,6 +63,7 @@ typedef uint8 mouse_state;
 
 struct os_version
 {
+    char OSName[0x20];
 	unsigned Major;
 	unsigned Minor;
 	unsigned Build;

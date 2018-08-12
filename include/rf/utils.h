@@ -42,6 +42,10 @@ void    *ReadFileContents(context *Context, path const Filename, int32 *FileSize
 /// the caller HAS to free it. It should only be used if the Context doesn't exist yet
 void    *ReadFileContentsNoContext(path const Filename, int32 *FileSize);
 
+/// Returns the index of the first iterance of the character in the given string
+/// returns -1 if none is found
+int     FindFirstOf(char const *Str, char charToFind);
+
 /// Returns the number of byte characters that the UTF8 string is composed of
 /// If 1, it is a normal ascii string
 /// Returns -1 if the string is not UTF8

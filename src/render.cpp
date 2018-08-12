@@ -491,7 +491,7 @@ void FramebufferAttachBuffer(frame_buffer *FB, uint32 Attachment, uint32 Channel
 // This doesnt take it into account since we bake each letter separately for future use by texture lookup
 font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight, int Char0, int CharN)
 {
-    if(FontHeight >= 1000) FontHeight = 999; // be realist..
+    if(FontHeight > 256) FontHeight = 256; // upper bound on font height
     real32 PixelHeight = (real32)FontHeight;
 
     path ResourceName;

@@ -94,6 +94,19 @@ void *ReadFileContents(context *Context, path const Filename, int32 *FileSize)
     return (void*)Contents;
 }
 
+int FindFirstOf(char const *Str, char charToFind)
+{
+    int idx = -1;
+    char const *pStr = Str;
+    while(pStr && *pStr && *pStr != charToFind)
+    {
+        idx++;
+        pStr++;
+    }
+    if(idx >= 0) idx++; // to account for starting at -1
+    return idx;
+}
+
 size_t GetDateTime(char *Dst, size_t DstSize, char const *Fmt)
 {
     time_t rawtime;
@@ -188,12 +201,6 @@ char *GetFirstNonWhitespace( char *Src )
 	return Src;
 }
 
-/// Platform dependent functions
-#ifdef RF_WIN32
-#include <Windows.h>
-#include <intrin.h>
-#include <powerbase.h>
-
 struct cpu_info
 {
 	int CPUCount;
@@ -202,6 +209,12 @@ struct cpu_info
 	char CPUVendor[0x20];
 	char CPUBrand[0x40];
 };
+
+/// Platform dependent functions
+#ifdef RF_WIN32
+#include <Windows.h>
+#include <intrin.h>
+#include <powerbase.h>
 
 struct mem_status
 {
@@ -330,6 +343,8 @@ static void QueryMemStatus( mem_status *mstat )
 
 static void GetOSVersion( os_version *OsVersion )
 {
+    memcpy(OsVersion->OSName, "Windows", 7);
+
 	HMODULE hm = GetModuleHandleW( L"ntdll.dll" );
 
 	RTL_OSVERSIONINFOW rovi;
@@ -427,6 +442,8 @@ void SetClipboardContent( char *Content )
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/sysinfo.h>
+#include <sys/sysctl.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #include <fcntl.h>
@@ -494,11 +511,97 @@ void PlatformSleep(uint32 MillisecondsToSleep)
     nanosleep(&TS, NULL);
 }
 
+static void GetCpuInfo( cpu_info &cpuInfo )
+{
+    memcpy(cpuInfo.CPUVendor, "Unknown CPU", 13);
+    memcpy(cpuInfo.CPUBrand, "Unknown", 7);
+    cpuInfo.CPUCount = get_nprocs();
+
+    // get more data from cpuinfo
+    FILE *fp = fopen("/proc/cpuinfo", "r");
+    if(fp)
+    {
+        size_t len;
+        ssize_t bytesRead;
+        char *line = NULL;
+
+        int procCount = 0;
+        bool vendorStrFound = false;
+
+        while((bytesRead = getline(&line, &len, fp)) != -1)
+        {
+            if(!strncmp(line, "processor", 9))
+            {
+                if(procCount == 1) // only read the 1st proc entryy
+                    break;
+                procCount++;
+            }
+
+            if(!strncmp(line, "vendor_id", 9))
+            { // CPU vendor
+                int vendorIdIdx = FindFirstOf(line, ':');
+                if(vendorIdIdx >= 0)
+                {
+                    vendorIdIdx += 2; // first char of the vendor string
+                    char *vendorIdStr = line + vendorIdIdx;
+                    if(!strncmp(vendorIdStr, "GenuineIntel", 12))
+                        memcpy(cpuInfo.CPUVendor, "Intel", 6);
+                    else if(!strncmp(vendorIdStr, "AuthenticAMD", 12))
+                        memcpy(cpuInfo.CPUVendor, "AMD", 4);
+                }
+            }
+
+            if(!strncmp(line, "model name", 10))
+            { // CPU model
+                int brandIdIdx = FindFirstOf(line, ':');
+                if(brandIdIdx >= 0)
+                {
+                    brandIdIdx += 2;
+                    char *brandIdStr = line + brandIdIdx;
+                    size_t brandIdStrLen = strlen(brandIdStr);
+                    brandIdStrLen -= 1; // remove trailing \n
+                    memcpy(cpuInfo.CPUBrand, brandIdStr, brandIdStrLen);
+
+                    // get Ghz from that string (reported frequency, not actual on unix...)
+                    int freqIdx = FindFirstOf(brandIdStr, '@');
+                    freqIdx += 2;
+                    char *freqStr = line + brandIdIdx + freqIdx;
+                    int freqIdxEnd = FindFirstOf(freqStr, 'G');
+                    char freqTmpStr[8] = { 0 };
+                    memcpy(freqTmpStr, freqStr, freqIdxEnd);
+                    cpuInfo.CPUGHz = atof(freqTmpStr);
+                }
+            }
+
+            free(line); line = NULL;
+        }
+
+        fclose(fp);
+    }
+}
+
+static void GetOSVersion(os_version *osVersion)
+{
+    memcpy(osVersion->OSName, "Unix", 4);
+}
+
 void GetSystemInfo( system_info &SysInfo )
 {
 	// TODO - Unix Version
 	memset( &SysInfo, 0, sizeof( system_info ) );
-	printf( "GetSystemInfo not implemented on Unix.\n" );
+
+    cpu_info cpuInfo;
+    GetCpuInfo(cpuInfo);
+
+    SysInfo.CPUCountLogical = cpuInfo.CPUCount;
+	SysInfo.CPUGHz = cpuInfo.CPUGHz;
+    //SysInfo.SystemMB = SystemMemMB;
+	//SysInfo.SSESupport = SSE;
+	memcpy( SysInfo.CPUName, cpuInfo.CPUVendor, sizeof( SysInfo.CPUName ) );
+	memcpy( SysInfo._CPUBrand, cpuInfo.CPUBrand, sizeof( SysInfo._CPUBrand ) );
+	SysInfo.CPUBrand = SysInfo._CPUBrand;
+	SysInfo.CPUBrand = GetFirstNonWhitespace( SysInfo.CPUBrand );
+	GetOSVersion( &SysInfo.OSVersion );
 }
 
 char *GetClipboardContent()

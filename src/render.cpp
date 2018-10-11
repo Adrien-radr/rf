@@ -312,7 +312,7 @@ uint32 Make3DTexture(uint32 Width, uint32 Height, uint32 Depth, uint32 Channels,
 
 static uint32 Make2DTexture(image *Image, bool IsFloat, bool FloatHalfPrecision, uint32 AnisotropicLevel, int MagFilter, int MinFilter, int WrapS, int WrapT)
 {
-    return Make2DTexture(Image->Buffer, Image->Width, Image->Height, Image->Channels, IsFloat, FloatHalfPrecision, AnisotropicLevel,
+    return Make2DTexture(Image->Buffer, Image->Width, Image->Height, Image->Channels, IsFloat, FloatHalfPrecision, (real32)AnisotropicLevel,
                          MagFilter, MinFilter, WrapS, WrapT);
 }
 
@@ -344,7 +344,7 @@ uint32 *ResourceLoad2DTexture(context *Context, path const Filename, bool IsFloa
     }
 
     uint32 *Tex = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
-    *Tex = Make2DTexture(ResourceLoadImage(Context, Filename, IsFloat, ForceNumChannel),
+    *Tex = Make2DTexture(ResourceLoadImage(Context, Filename, IsFloat, true, ForceNumChannel),
                          IsFloat, FloatHalfPrecision, AnisotropicLevel, MagFilter, MinFilter, WrapS, WrapT);
 
     ResourceStore(&Context->RenderResources, RESOURCE_TEXTURE, Filename, Tex);
@@ -495,7 +495,7 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
     real32 PixelHeight = (real32)FontHeight;
 
     path ResourceName;
-    uint32 FilenameLen = strlen(Filename);
+    uint32 FilenameLen = (uint32)strlen(Filename);
     Assert(FilenameLen < (MAX_PATH-4));
     strncpy(ResourceName, Filename, FilenameLen); // to add the 3 size characters + \0
     sprintf(ResourceName + FilenameLen, "%d", (int32)FontHeight);
@@ -517,8 +517,8 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
         real32 PixelScale = stbtt_ScaleForPixelHeight(&STBFont, PixelHeight);
         int Ascent, Descent, LineGap;
         stbtt_GetFontVMetrics(&STBFont, &Ascent, &Descent, &LineGap);
-        Ascent *= PixelScale;
-        Descent *= PixelScale;
+        Ascent = (int)floor(Ascent * PixelScale);
+        Descent = (int)floor(Descent * PixelScale);
 
         Font->Width = 1024;
         Font->Height = 1024;
@@ -556,8 +556,8 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
                 Assert((Y + Font->LineGap) < Font->Height);
             }
 
-            int CharX = X;
-            int CharY = Max(0, Y + Ascent + Y0);
+            int CharX = (int)ceil(X);
+            int CharY = (int)ceil(Max(0.f, Y + Ascent + Y0));
 
             glyph &DstGlyph = Font->Glyphs[Codepoint-Font->Char0];
             DstGlyph.X = X0; DstGlyph.Y = Y0;
@@ -744,7 +744,7 @@ uint32 MakeVertexArrayObject()
     return VAO;
 }
 
-uint32 AddEmptyVBO(uint32 Size, uint32 Usage)
+uint32 AddEmptyVBO(size_t Size, uint32 Usage)
 {
     uint32 Buffer;
     glGenBuffers(1, &Buffer);
@@ -755,7 +755,7 @@ uint32 AddEmptyVBO(uint32 Size, uint32 Usage)
 }
 
 void FillVBO(uint32 Attrib, uint32 AttribStride, uint32 Type,
-             size_t ByteOffset, uint32 Size, void const *Data)
+             size_t ByteOffset, size_t Size, void const *Data)
 {
     glEnableVertexAttribArray(Attrib);
     CheckGLError("VA");
@@ -786,7 +786,7 @@ void UpdateVBO(uint32 VBO, size_t ByteOffset, uint32 Size, void *Data)
     glBufferSubData(GL_ARRAY_BUFFER, ByteOffset, Size, Data);
 }
 
-uint32 AddIBO(uint32 Usage, uint32 Size, void const *Data)
+uint32 AddIBO(uint32 Usage, size_t Size, void const *Data)
 {
     uint32 Buffer;
     glGenBuffers(1, &Buffer);
@@ -844,7 +844,7 @@ static void FillCharInterleaved(real32 *VertData, uint16 *IdxData, uint32 i, uin
     IdxData[i*6+0] = i*4+0;IdxData[i*6+1] = i*4+1;IdxData[i*6+2] = i*4+2;
     IdxData[i*6+3] = i*4+0;IdxData[i*6+4] = i*4+2;IdxData[i*6+5] = i*4+3;
 
-    *X += Glyph.AdvX;
+    *X += (int)ceil(Glyph.AdvX);
 }
 
 void FillDisplayTextInterleaved(char const *Text, uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
@@ -855,7 +855,7 @@ void FillDisplayTextInterleaved(char const *Text, uint32 TextLength, font *Font,
     uint32 AdditionalLen = 0;
     if(TextWidth >= MaxPixelWidth)
     { // remove necessary charcount + 1
-        TextLength -= ((TextWidth - MaxPixelWidth) / Font->MaxGlyphWidth) + 1;
+        TextLength -= (int)ceil((TextWidth - MaxPixelWidth) / Font->MaxGlyphWidth) + 1;
         AdditionalLen = 2; // 2 dots
     }
 
@@ -870,7 +870,7 @@ void FillDisplayTextInterleaved(char const *Text, uint32 TextLength, font *Font,
         if(Text[i] == '\n')
         {
             X = 0;
-            Y -= Scale * Font->LineGap;
+            Y -= (int)ceil(Scale * Font->LineGap);
             AsciiIdx = Text[++i] - Font->Char0;
             IndexCount -= 6;
         }
@@ -931,7 +931,7 @@ real32 GetDisplayTextWidth(char const *Text, font *Font, real32 Scale)
     }
     else
     {
-        uint32 TextLength = strlen(Text);
+        uint32 TextLength = (uint32)strlen(Text);
         for(uint32 i = 0; i < TextLength; ++i)
         {
             uint8 AsciiIdx = Text[i] - Font->Char0;
@@ -946,7 +946,7 @@ display_text MakeDisplayText(context *Context, font *Font, char const *Msg, int 
 {
     display_text Text = {};
 
-    uint32 MsgLength = strlen(Msg);
+    uint32 MsgLength = (uint32)strlen(Msg);
     uint32 VertexCount = MsgLength * 4;
     uint32 IndexCount = MsgLength * 6;
 
@@ -1001,7 +1001,7 @@ display_text MakeDisplayText(context *Context, font *Font, char const *Msg, int 
         Indices[i*6+0] = i*4+0;Indices[i*6+1] = i*4+1;Indices[i*6+2] = i*4+2;
         Indices[i*6+3] = i*4+0;Indices[i*6+4] = i*4+2;Indices[i*6+5] = i*4+3;
 
-        X += Glyph.AdvX;
+        X += (int)ceil(Glyph.AdvX);
     }
 
     Text.VAO = MakeVertexArrayObject();
@@ -1175,16 +1175,16 @@ mesh Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions)
 {
     mesh Quad = {};
 
-    uint32 QuadCount1D = pow(2, Subdivisions);
+    uint32 QuadCount1D = (int)pow(2, Subdivisions);
     uint32 QuadCount = QuadCount1D * QuadCount1D;
     uint32 TriangleCount = QuadCount * 2;
     Quad.IndexCount = TriangleCount * 3;
     uint32 VCount1D = QuadCount1D + 1;
     uint32 VertexCount = VCount1D * VCount1D;
 
-    vec2f Rect((End.x-Start.x), (End.y-Start.y));
-    vec2f Stride = Rect / QuadCount1D;
-    vec2f TexStride = vec2f(1,1) / QuadCount1D;
+    vec2f Rect((real32)(End.x-Start.x), (real32)(End.y-Start.y));
+    vec2f Stride = Rect / (real32)QuadCount1D;
+    vec2f TexStride = vec2f(1,1) / (real32)QuadCount1D;
 
     vec2f *Positions = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));
     vec2f *Texcoords = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));
@@ -1229,7 +1229,7 @@ mesh Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 
 {
     mesh Plane = {};
 
-    size_t BaseSize = Square(Subdivisions);
+    uint32 BaseSize = Square(Subdivisions);
     size_t PositionsSize = 4 * BaseSize * sizeof(vec3f);
     size_t NormalsSize = 4 * BaseSize * sizeof(vec3f);
     size_t TexcoordsSize = 4 * BaseSize * sizeof(vec2f);
@@ -1243,7 +1243,7 @@ mesh Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 
     uint32 *Indices = (uint32*)ctx::AllocScratch(Context, IndicesSize);
 
     vec2i SubdivDim = Dimension / Subdivisions;
-    vec2f TexMax = Dimension / (real32)TextureRepeatCount;
+    vec2f TexMax = vec2f(Dimension) / (real32)TextureRepeatCount;
 
     for(uint32 j = 0; j < Subdivisions; ++j)
     {
@@ -1251,10 +1251,10 @@ mesh Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 
         {
             uint32 Idx = j*Subdivisions+i;
 
-            Positions[Idx*4+0] = vec3f(i*SubdivDim.x, 0.f, j*SubdivDim.y);
-            Positions[Idx*4+1] = vec3f(i*SubdivDim.x, 0.f, (j+1)*SubdivDim.y);
-            Positions[Idx*4+2] = vec3f((i+1)*SubdivDim.x, 0.f, (j+1)*SubdivDim.y);
-            Positions[Idx*4+3] = vec3f((i+1)*SubdivDim.x, 0.f, j*SubdivDim.y);
+            Positions[Idx*4+0] = vec3f((real32)i*SubdivDim.x, 0.f, (real32)j*SubdivDim.y);
+            Positions[Idx*4+1] = vec3f((real32)i*SubdivDim.x, 0.f, real32(j+1)*SubdivDim.y);
+            Positions[Idx*4+2] = vec3f(real32(i+1)*SubdivDim.x, 0.f, real32(j+1)*SubdivDim.y);
+            Positions[Idx*4+3] = vec3f(real32(i+1)*SubdivDim.x, 0.f, (real32)j*SubdivDim.y);
 
             Normals[Idx*4+0] = vec3f(0,1,0); Tangents[Idx*4+0] = vec4f(1,0,0,1);
             Normals[Idx*4+1] = vec3f(0,1,0); Tangents[Idx*4+1] = vec4f(1,0,0,1);
@@ -1537,7 +1537,7 @@ void ComputeIrradianceCubemap(context *Context, char const *HDREnvmapFilename,
     uint32 const MaxMipLevels = 5;
     for(uint32 mip = 0; mip < MaxMipLevels; ++mip)
     {
-        uint32 const MipW = GlossyCubemapWidth * std::pow(0.5, mip);
+        uint32 const MipW = GlossyCubemapWidth * (int)std::pow(0.5, mip);
         uint32 const MipH = MipW;
         glBindRenderbuffer(GL_RENDERBUFFER, FBOEnvmap.DepthBufferID);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, MipW, MipH);

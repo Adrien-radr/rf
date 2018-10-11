@@ -119,8 +119,8 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
                 int TextureIndex = (int)DiffuseTexIdx->second.json_double_value.at("index");
                 const Image &img = Mdl.images[Mdl.textures[TextureIndex].source];
                 const Sampler &spl = Mdl.samplers[Mdl.textures[TextureIndex].sampler];
-                DstMtl.AlbedoTexture = Make2DTexture((void*)&img.image[0], img.width, img.height, img.component, 
-                        false, false, AnisotropicLevel,
+                DstMtl.AlbedoTexture = Make2DTexture((void*)&img.image[0], (uint32)img.width, (uint32)img.height, (uint32)img.component, 
+                        false, false, (real32)AnisotropicLevel,
                         spl.magFilter, spl.minFilter, spl.wrapS, spl.wrapT);
             }
             else
@@ -134,8 +134,8 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
                 int TextureIndex = (int)RoughnessTexIdx->second.json_double_value.at("index");
                 const Image &img = Mdl.images[Mdl.textures[TextureIndex].source];
                 const Sampler &spl = Mdl.samplers[Mdl.textures[TextureIndex].sampler];
-                DstMtl.RoughnessMetallicTexture = Make2DTexture((void*)&img.image[0], img.width, img.height, img.component, 
-                        false, false, AnisotropicLevel,
+                DstMtl.RoughnessMetallicTexture = Make2DTexture((void*)&img.image[0], (uint32)img.width, (uint32)img.height, (uint32)img.component, 
+                        false, false, (real32)AnisotropicLevel,
                         spl.magFilter, spl.minFilter, spl.wrapS, spl.wrapT);
             }
             else
@@ -150,7 +150,7 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
                 const Image &img = Mdl.images[Mdl.textures[TextureIndex].source];
                 const Sampler &spl = Mdl.samplers[Mdl.textures[TextureIndex].sampler];
                 DstMtl.NormalTexture = Make2DTexture((void*)&img.image[0], img.width, img.height, img.component,
-                        false, false, AnisotropicLevel, spl.magFilter, spl.minFilter, spl.wrapS, spl.wrapT);
+                        false, false, (real32)AnisotropicLevel, spl.magFilter, spl.minFilter, spl.wrapS, spl.wrapT);
             }
             else
             {
@@ -164,7 +164,7 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
                 const Image &img = Mdl.images[Mdl.textures[TextureIndex].source];
                 const Sampler &spl = Mdl.samplers[Mdl.textures[TextureIndex].sampler];
                 DstMtl.EmissiveTexture = Make2DTexture((void*)&img.image[0], img.width, img.height, img.component,
-                        false, false, AnisotropicLevel, spl.magFilter, spl.minFilter, spl.wrapS, spl.wrapT);
+                        false, false, (real32)AnisotropicLevel, spl.magFilter, spl.minFilter, spl.wrapS, spl.wrapT);
             }
             else
             {
@@ -174,9 +174,9 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
             auto AlbedoMultIdx = SrcMtl.values.find("albedoFactor");
             if(AlbedoMultIdx != SrcMtl.values.end())
             {
-                DstMtl.AlbedoMult = vec3f(AlbedoMultIdx->second.number_array[0],
-                                          AlbedoMultIdx->second.number_array[1],
-                                          AlbedoMultIdx->second.number_array[2]);
+                DstMtl.AlbedoMult = vec3f((real32)AlbedoMultIdx->second.number_array[0],
+                                          (real32)AlbedoMultIdx->second.number_array[1],
+                                          (real32)AlbedoMultIdx->second.number_array[2]);
             }
             else
             {
@@ -186,7 +186,7 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
             auto RoughnessMultIdx = SrcMtl.values.find("roughnessFactor");
             if(RoughnessMultIdx != SrcMtl.values.end())
             {
-                DstMtl.RoughnessMult = RoughnessMultIdx->second.number_array[0];
+                DstMtl.RoughnessMult = (real32)RoughnessMultIdx->second.number_array[0];
             }
             else
             {
@@ -196,7 +196,7 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
             auto MetallicMultIdx = SrcMtl.values.find("metallicFactor");
             if(MetallicMultIdx != SrcMtl.values.end())
             {
-                DstMtl.MetallicMult = MetallicMultIdx->second.number_array[0];
+                DstMtl.MetallicMult = (real32)MetallicMultIdx->second.number_array[0];
             }
             else
             {
@@ -206,9 +206,9 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
             auto EmissiveMultIdx = SrcMtl.values.find("emissiveFactor");
             if(EmissiveMultIdx != SrcMtl.values.end())
             {
-                DstMtl.EmissiveMult = vec3f(EmissiveMultIdx->second.number_array[0],
-                                            EmissiveMultIdx->second.number_array[1],
-                                            EmissiveMultIdx->second.number_array[2]);
+                DstMtl.EmissiveMult = vec3f((real32)EmissiveMultIdx->second.number_array[0],
+                                            (real32)EmissiveMultIdx->second.number_array[1],
+                                            (real32)EmissiveMultIdx->second.number_array[2]);
             }
             else
             {
@@ -236,8 +236,8 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
         mesh &DstMesh = Model->Mesh[iter];
         Model->MaterialIdx[iter] = prim.material;
 
-        DstMesh.IndexCount = indices.count;
-        DstMesh.IndexType = indices.componentType;
+        DstMesh.IndexCount = (uint32)indices.count;
+        DstMesh.IndexType = (uint32)indices.componentType;
         DstMesh.VAO = MakeVertexArrayObject();
 
         // compute size of index buffer
@@ -323,7 +323,7 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
                     real32 *NormalPtr = (real32*)(&DataBuffer.data[0] + acc.byteOffset + bv.byteOffset);
 
                     // Generate tangents ourselves
-                    uint32 TangentSize = sizeof(vec4f) * acc.count;
+                    size_t TangentSize = sizeof(vec4f) * acc.count;
                     vec4f *Tangent = (vec4f*)alloca(TangentSize);
                     vec3f Dummy;
 
@@ -365,20 +365,20 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
         }
         if(SrcNode.translation.size())
         {
-            Translation = vec3f(SrcNode.translation[0], SrcNode.translation[1], SrcNode.translation[2]);
+            Translation = vec3f((real32) SrcNode.translation[0], (real32) SrcNode.translation[1], (real32) SrcNode.translation[2]);
         }
         if(SrcNode.scale.size())
         {
-            Scale = vec3f(SrcNode.scale[0], SrcNode.scale[1], SrcNode.scale[2]);
+            Scale = vec3f((real32) SrcNode.scale[0], (real32) SrcNode.scale[1], (real32) SrcNode.scale[2]);
         }
 
         if(SrcNode.matrix.size())
         {
             std::vector<double> const &sm = SrcNode.matrix;
-            DstMesh.ModelMatrix = mat4f(sm[0], sm[1], sm[2], sm[3],
-                                        sm[4], sm[5], sm[6], sm[7],
-                                        sm[8], sm[9], sm[10], sm[11],
-                                        sm[12], sm[13], sm[14], sm[15]);
+            DstMesh.ModelMatrix = mat4f((real32)sm[0],  (real32)sm[1],  (real32)sm[2],  (real32)sm[3],
+                                        (real32)sm[4],  (real32)sm[5],  (real32)sm[6],  (real32)sm[7],
+                                        (real32)sm[8],  (real32)sm[9],  (real32)sm[10], (real32)sm[11],
+                                        (real32)sm[12], (real32)sm[13], (real32)sm[14], (real32)sm[15]);
         }
         else
         {

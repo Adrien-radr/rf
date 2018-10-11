@@ -334,7 +334,7 @@ void MakeText(void *ID, char const *Text, theme_font FontStyle, vec2i PositionOf
     }
     else
     {
-        MsgLength = strlen(Text);
+        MsgLength = (uint32)strlen(Text);
         VertexCount = (MsgLength+1) * 4;
         IndexCount = (MsgLength +1)* 6;
     }
@@ -411,8 +411,8 @@ void MakeTitlebar(void *ID, char const *PanelTitle, vec3i Position, vec2i Size, 
     RenderInfo->ID = ID;
     RenderInfo->ParentID = ParentID[ParentLayer];
 
-    vec2f TL(Position.x, Position.y);
-    vec2f BR(Position.x + Size.x, Position.y + Size.y);
+    vec2f TL((real32)Position.x, (real32)Position.y);
+    vec2f BR((real32)Position.x + Size.x, (real32)Position.y + Size.y);
 
     FillSquare(VertData, IdxData, 0, 0, TL, BR);
     ++(RenderCmdCount[ParentPanelIdx]);
@@ -449,7 +449,7 @@ void MakeSlider(real32 *ID, real32 MinVal, real32 MaxVal)
               ParentRI->Position.y + TitlebarOffset + UI_BORDER_WIDTH);
 
     vec2f TL(Pos);
-    vec2f BR(Pos.x+Size.x, Pos.y+Size.y);
+    vec2f BR((real32)Pos.x+Size.x, (real32)Pos.y+Size.y);
 
     FillSquare(VertData, IdxData, 0, 0, TL, BR);
     ++(RenderCmdCount[ParentPanelIdx]);
@@ -470,8 +470,8 @@ void MakeSlider(real32 *ID, real32 MinVal, real32 MaxVal)
     real32 const HalfSliderHeight = 10.f;
     real32 const Ratio = 1.f - ((*ID - MinVal) / (MaxVal - MinVal));
     real32 const PXHeight = Size.y - 2.f * HalfSliderHeight;
-    TL = vec2f(Pos.x, Pos.y + HalfSliderHeight + Ratio * PXHeight - HalfSliderHeight);
-    BR = vec2f(Pos.x + Size.x, Pos.y + HalfSliderHeight + Ratio * PXHeight + HalfSliderHeight);
+    TL = vec2f((real32)Pos.x, (real32)Pos.y + HalfSliderHeight + Ratio * PXHeight - HalfSliderHeight);
+    BR = vec2f((real32)Pos.x + Size.x, (real32) Pos.y + HalfSliderHeight + Ratio * PXHeight + HalfSliderHeight);
 
     FillSquare(VertData, IdxData, 0, 0, TL, BR);
     ++(RenderCmdCount[ParentPanelIdx]);
@@ -536,7 +536,7 @@ void MakeProgressbar(real32 *ID, real32 MaxVal, vec2i const &PositionOffset, vec
         RenderInfo->ID = ID;
         RenderInfo->ParentID = ParentID[ParentLayer];
 
-        vec2i BRP(TL.x + ceil(ProgressWidth) - BorderOffset, TL.y + Size.y - BorderOffset);
+        vec2i BRP(TL.x + (int)ceil(ProgressWidth) - BorderOffset, TL.y + Size.y - BorderOffset);
 
         FillSquare(VertData, IdxData, 0, 0, TL + vec2i(BorderOffset), BRP);
         ++(RenderCmdCount[ParentPanelIdx]);
@@ -570,9 +570,9 @@ bool MakeButton(uint32 *ID, char const *ButtonText, theme_font FontStyle, vec2i 
     int const MarginOffset = (DecorationFlags & DECORATION_MARGIN) ? UI_MARGIN_WIDTH : 0;
     int const BorderOffset = (DecorationFlags & DECORATION_BORDER) ? UI_BORDER_WIDTH : 0;
     int const TextHeight = Font->LineGap;
-    vec2f const MaxBR(ParentRI->Position.x + ParentRI->Size.x - BorderOffset - MarginOffset, ParentRI->Position.y + ParentRI->Size.y - BorderOffset - MarginOffset);
-    vec2f const OffsetPos(ParentRI->Position.x + PositionOffset.x + MarginOffset + BorderOffset, 
-                          ParentRI->Position.y + PositionOffset.y + TitlebarOffset + MarginOffset + BorderOffset);
+    vec2f const MaxBR((real32)ParentRI->Position.x + ParentRI->Size.x - BorderOffset - MarginOffset, (real32) ParentRI->Position.y + ParentRI->Size.y - BorderOffset - MarginOffset);
+    vec2f const OffsetPos((real32) ParentRI->Position.x + PositionOffset.x + MarginOffset + BorderOffset,
+						  (real32) ParentRI->Position.y + PositionOffset.y + TitlebarOffset + MarginOffset + BorderOffset);
     vec2f const TL(OffsetPos.x, OffsetPos.y);
     vec2f BR(TL.x + Size.x, TL.y + Max(2*MarginOffset + 2*BorderOffset + TextHeight, Size.y));
     BR.x = Min(BR.x, MaxBR.x);
@@ -589,10 +589,10 @@ bool MakeButton(uint32 *ID, char const *ButtonText, theme_font FontStyle, vec2i 
     real32 const MaxButtonTextWidth = BR.x - TL.x - 2*UI_BORDER_WIDTH - 2*UI_MARGIN_WIDTH;
     real32 const TextWidth = GetDisplayTextWidth(ButtonText, Font, FontScale);
     real32 const TextMargin = (MaxButtonTextWidth - TextWidth) * 0.5f;//BR.x-TL.x - TextWidth;//(MaxButtonTextWidth-TextWidth) * 0.5f;
-    MakeText(NULL, ButtonText, FontStyle, vec2i(PositionOffset.x + TextMargin + BorderOffset + MarginOffset, PositionOffset.y + MarginOffset + BorderOffset), 
-             Theme.PanelFG, FontScale, MaxButtonTextWidth);
+    MakeText(NULL, ButtonText, FontStyle, vec2i(PositionOffset.x + (int)ceil(TextMargin) + BorderOffset + MarginOffset, PositionOffset.y + MarginOffset + BorderOffset),
+             Theme.PanelFG, FontScale, (int)MaxButtonTextWidth);
 
-    vec2f const MousePos(Input->MousePosX, Input->MousePosY);
+    vec2f const MousePos((real32) Input->MousePosX, (real32) Input->MousePosY);
     if(Hover.ID == ParentRI->ID)
     {
         if(MOUSE_HIT(Input->MouseLeft) && PointInRectangle(MousePos, TL, BR))
@@ -636,8 +636,8 @@ void MakeImage(real32 *ID, uint32 TextureID, vec2f *TexOffset, vec2i const &Size
     render_info *ParentRI = GetParentRenderInfo(ParentPanelIdx);
     int const TitlebarOffset = ParentRI->Flags & DECORATION_TITLEBAR ? UI_TITLEBAR_HEIGHT : 0;
     vec2i MaxBR(ParentRI->Position.x + ParentRI->Size.x - UI_BORDER_WIDTH - UI_MARGIN_WIDTH, ParentRI->Position.y + ParentRI->Size.y - UI_BORDER_WIDTH - UI_MARGIN_WIDTH);
-    vec2f TL(ParentRI->Position.x + UI_BORDER_WIDTH + UI_MARGIN_WIDTH + UI_BORDER_WIDTH, ParentRI->Position.y + TitlebarOffset + UI_BORDER_WIDTH + UI_MARGIN_WIDTH + UI_BORDER_WIDTH);
-    vec2f BR(TL.x + Size.x - UI_BORDER_WIDTH, TL.y + Size.y - UI_BORDER_WIDTH);
+    vec2f TL((real32) ParentRI->Position.x + UI_BORDER_WIDTH + UI_MARGIN_WIDTH + UI_BORDER_WIDTH, (real32) ParentRI->Position.y + TitlebarOffset + UI_BORDER_WIDTH + UI_MARGIN_WIDTH + UI_BORDER_WIDTH);
+    vec2f BR((real32) TL.x + Size.x - UI_BORDER_WIDTH, (real32) TL.y + Size.y - UI_BORDER_WIDTH);
     BR.x = Min(BR.x, MaxBR.x);
     BR.y = Min(BR.y, MaxBR.y);
 
@@ -649,13 +649,13 @@ void MakeImage(real32 *ID, uint32 TextureID, vec2f *TexOffset, vec2i const &Size
 
     if(Hover.ID == ParentRI->ID)
     {
-        if(Input->MouseDZ != 0 && PointInRectangle(vec2f(Input->MousePosX, Input->MousePosY), TL, BR))
+        if(Input->MouseDZ != 0 && PointInRectangle(vec2f((real32) Input->MousePosX, (real32) Input->MousePosY), TL, BR))
         {
             *ID *= (1.f + 0.1f * Input->MouseDZ);
             *ID = Max(0.0001f, *ID);
         }
 
-        if(MOUSE_HIT(Input->MouseLeft) && PointInRectangle(vec2f(Input->MousePosX, Input->MousePosY), TL, BR))
+        if(MOUSE_HIT(Input->MouseLeft) && PointInRectangle(vec2f((real32) Input->MousePosX, (real32) Input->MousePosY), TL, BR))
         {
             MouseHold = ID;
         }
@@ -743,8 +743,8 @@ void BeginPanel(uint32 *ID, char const *PanelTitle, vec3i *Position, vec2i *Size
     RenderInfo->Flags = DecorationFlags;
     LastRootWidget = *ID;
 
-    vec2f TL(Position->x, Position->y);
-    vec2f BR(Position->x + Size->x, Position->y + Size->y);
+    vec2f TL((real32) Position->x, (real32) Position->y);
+    vec2f BR((real32) Position->x + Size->x, (real32) Position->y + Size->y);
 
     ++(RenderCmdCount[PanelIdx]);
 
@@ -770,7 +770,7 @@ void BeginPanel(uint32 *ID, char const *PanelTitle, vec3i *Position, vec2i *Size
 
     if(HoverNext.Priority <= PanelOrder[PanelIdx])
     {
-        vec2f MousePos(Input->MousePosX, Input->MousePosY);
+        vec2f MousePos((real32) Input->MousePosX, (real32) Input->MousePosY);
         if(PointInRectangle(MousePos, TL, BR))
         {
             HoverNext.ID = ID;
@@ -779,7 +779,7 @@ void BeginPanel(uint32 *ID, char const *PanelTitle, vec3i *Position, vec2i *Size
 
             // Test for Titlebar click
             vec2f TB_TL = TL;
-            vec2f TB_BR(BR.x, Position->y + UI_TITLEBAR_HEIGHT + UI_BORDER_WIDTH);
+            vec2f TB_BR((real32) BR.x, (real32) Position->y + UI_TITLEBAR_HEIGHT + UI_BORDER_WIDTH);
             if(MOUSE_HIT(Input->MouseLeft))
             {
                 if(DecorationFlags & DECORATION_TITLEBAR && ID == Hover.ID && PointInRectangle(MousePos, TB_TL, TB_BR))

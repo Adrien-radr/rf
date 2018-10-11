@@ -160,10 +160,10 @@ int    UTF8CharCount(char const *Str, uint16 *OutUnicode)
     return CharCount;
 }
 
-size_t UTF8Len(char const *Str, size_t MaxChar)
+uint32 UTF8Len(char const *Str, uint32 MaxChar)
 {
-    size_t Len = 0;
-    size_t i = 0;
+	uint32 Len = 0;
+	uint32 i = 0;
     while(Str[i] && i < MaxChar)
     {
         Len += (Str[i++] & 0xc0) != 0x80;

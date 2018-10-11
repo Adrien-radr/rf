@@ -53,7 +53,7 @@ int     FindFirstOf(char const *Str, char charToFind);
 int     UTF8CharCount(char const *Str, uint16 *Unicode = NULL);
 
 /// Returns the length (number of characters) of an UTF8 string
-size_t  UTF8Len(char const *Str, size_t MaxChar = -1);
+uint32  UTF8Len(char const *Str, uint32 MaxChar = -1);
 
 /// Converts the UTF8 string to an unsigned integers (e.g. for indexing)
 uint16  UTF8CharToInt(char const *Str, size_t *CharAdvance);

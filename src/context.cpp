@@ -172,7 +172,7 @@ namespace ctx {
 		LogInfo( "Using %d MB RAM", Context->SysInfo.SystemMB );
 		LogInfo( "SSE Support : %s", Context->SysInfo.SSESupport ? "yes" : "no" );
 
-        GLFWValid = glfwInit();
+        GLFWValid = glfwInit() == GLFW_TRUE;
         if(Context && GLFWValid)
         {
             glfwSetErrorCallback(ProcessErrorEvent);

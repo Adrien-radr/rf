@@ -780,7 +780,7 @@ uint32 AddVBO(uint32 Attrib, uint32 AttribStride, uint32 Type,
     return Buffer;
 }
 
-void UpdateVBO(uint32 VBO, size_t ByteOffset, uint32 Size, void *Data)
+void UpdateVBO(uint32 VBO, size_t ByteOffset, size_t Size, void *Data)
 {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferSubData(GL_ARRAY_BUFFER, ByteOffset, Size, Data);

@@ -218,6 +218,10 @@ namespace ctx {
                     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxSize);
                     LogInfo("GL Max Texture Width : %d", MaxSize);
 
+					int MaxTessPatchVertices = 0;
+					glGetIntegerv(GL_MAX_PATCH_VERTICES, &MaxTessPatchVertices);
+					LogInfo("GL Max Tesselation Patch Vertices : %d", MaxTessPatchVertices);
+
                     ResizeWidth = Desc->WindowWidth;
                     ResizeHeight = Desc->WindowHeight;
                     Context->WindowWidth = Desc->WindowWidth;

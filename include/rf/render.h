@@ -159,7 +159,7 @@ uint32          AddEmptyVBO(size_t Size, uint32 Usage);
 void            FillVBO(uint32 Attrib, uint32 AttribStride, uint32 Type, size_t ByteOffset, size_t Size, void const *Data);
 void            UpdateVBO(uint32 VBO, size_t ByteOffset, size_t Size, void *Data);
 void            DestroyMesh(mesh *Mesh);
-void            RenderMesh(mesh *Mesh);
+void            RenderMesh(mesh *Mesh, uint32 GLDrawType = GL_TRIANGLES);
 
 mesh            MakeUnitCube(bool MakeAdditionalAttribs = true);
 mesh            Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions = 0);

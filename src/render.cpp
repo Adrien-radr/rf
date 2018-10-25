@@ -848,9 +848,9 @@ void DestroyMesh(mesh *Mesh)
     Mesh->IndexCount = 0;
 }
 
-void RenderMesh(mesh *Mesh)
+void RenderMesh(mesh *Mesh, uint32 GLDrawType)
 {
-    glDrawElements(GL_TRIANGLES, Mesh->IndexCount, Mesh->IndexType, 0);
+    glDrawElements(GLDrawType, Mesh->IndexCount, Mesh->IndexType, 0);
 }
 
 static void FillCharInterleaved(real32 *VertData, uint16 *IdxData, uint32 i, uint16 c, font *Font, int *X, int *Y, vec3i const &Pos, real32 Scale)

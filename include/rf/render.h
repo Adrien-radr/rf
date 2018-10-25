@@ -170,8 +170,9 @@ mesh            MakeUnitSphere(bool MakeAdditionalAttribs = true, real32 TexScal
 bool            ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, int AnisotropicLevel);
 
 /// Shader Utilities
-uint32          BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath = NULL);
-uint32          BuildShaderFromSource(context *Context, char const *VSrc, char const *FSrc, char const *GSrc = NULL);
+uint32          BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath = NULL, char *TESCPath = NULL, char *TESEPath = NULL);
+uint32          BuildShaderFromSource(context *Context, char const *VSrc, char const *FSrc, char const *GSrc = NULL,
+									  char const *TESCSrc = NULL, char const *TESESrc = NULL);
 void            SendVec2(uint32 Loc, vec2f value);
 void            SendVec3(uint32 Loc, vec3f value);
 void            SendVec4(uint32 Loc, vec4f value);

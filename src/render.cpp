@@ -614,7 +614,7 @@ uint32 _CompileShader(context *Context, char const *Src, int Type)
     return Shader;
 }
 
-uint32 BuildShaderFromSource(context *Context, char const *VSrc, char const *FSrc, char const *GSrc)
+uint32 BuildShaderFromSource(context *Context, char const *VSrc, char const *FSrc, char const *GSrc, char const *TESCSrc, char const *TESESrc)
 {
     uint32 ProgramID = glCreateProgram();
 
@@ -645,6 +645,31 @@ uint32 BuildShaderFromSource(context *Context, char const *VSrc, char const *FSr
         }
     }
 
+	uint32 TESCShader = 0, TESEShader = 0;
+	if(TESESrc)
+	{
+		TESEShader = _CompileShader(Context, TESESrc, GL_TESS_EVALUATION_SHADER);
+		if(!TESEShader)
+		{
+			glDeleteShader(VShader); glDeleteShader(FShader);
+			if (GShader) glDeleteShader(GShader);
+			glDeleteProgram(ProgramID);
+			return 0;
+		}
+	}
+	if (TESCSrc)
+	{
+		TESCShader = _CompileShader(Context, TESCSrc, GL_TESS_CONTROL_SHADER);
+		if (!TESCShader || !TESEShader) // cant have just control shader without evaluation shader
+		{
+			glDeleteShader(VShader); glDeleteShader(FShader);
+			if (GShader) glDeleteShader(GShader);
+			if (TESEShader) glDeleteShader(TESEShader);
+			glDeleteProgram(ProgramID);
+			return 0;
+		}
+	}
+
     glAttachShader(ProgramID, VShader);
     glAttachShader(ProgramID, FShader);
     if(GSrc)
@@ -652,6 +677,16 @@ uint32 BuildShaderFromSource(context *Context, char const *VSrc, char const *FSr
         glAttachShader(ProgramID, GShader);
         glDeleteShader(GShader);
     }
+	if(TESCShader)
+	{
+		glAttachShader(ProgramID, TESCShader);
+		glDeleteShader(TESCShader);
+	}
+	if(TESEShader)
+	{
+		glAttachShader(ProgramID, TESEShader);
+		glDeleteShader(TESEShader);
+	}
 
     glDeleteShader(VShader);
     glDeleteShader(FShader);
@@ -681,9 +716,9 @@ uint32 BuildShaderFromSource(context *Context, char const *VSrc, char const *FSr
     return ProgramID;
 }
 
-uint32 BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath)
+uint32 BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath, char *TESCPath, char *TESEPath)
 {
-    char *VSrc = NULL, *FSrc = NULL, *GSrc = NULL;
+    char *VSrc = NULL, *FSrc = NULL, *GSrc = NULL, *TESESrc = NULL, *TESCSrc = NULL;
 
     VSrc = (char*)ReadFileContents(Context, VSPath, 0);
     FSrc = (char*)ReadFileContents(Context, FSPath, 0);
@@ -693,12 +728,22 @@ uint32 BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath)
         GSrc = (char*)ReadFileContents(Context, GSPath, 0);
     }
 
+	if(TESCPath)
+	{
+		TESCSrc = (char*) ReadFileContents(Context, TESCPath, 0);
+	}
+
+	if(TESEPath)
+	{
+		TESESrc = (char*) ReadFileContents(Context, TESEPath, 0);
+	}
+
     uint32 ProgramID = 0;
-    bool IsValid = VSrc && FSrc && (!GSPath || GSrc);
+    bool IsValid = VSrc && FSrc && (!GSPath || GSrc) && (!TESEPath || TESESrc) && (!TESCPath || (TESESrc && TESCSrc));
 
     if(IsValid)
     {
-        ProgramID = BuildShaderFromSource(Context, VSrc, FSrc, GSrc);
+        ProgramID = BuildShaderFromSource(Context, VSrc, FSrc, GSrc, TESCSrc, TESESrc);
     }
 
     return ProgramID;

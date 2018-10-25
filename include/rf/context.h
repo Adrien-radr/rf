@@ -44,6 +44,7 @@ struct context
     mat4f ProjectionMatrix2D;
 
     bool WireframeMode;
+	bool EnableCull;
     vec4f ClearColor;
 
     real32 FOV;
@@ -92,6 +93,7 @@ namespace ctx
     void SetCursor(context *Context, cursor_type CursorType);
     void ShowCursor(context *Context, bool Val);
     GLenum SetWireframeMode(context *Context, GLenum Mode = 0);
+	void SetCullMode(context *Context);
 }
 }
 

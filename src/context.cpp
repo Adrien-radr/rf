@@ -227,7 +227,10 @@ namespace ctx {
                     Context->FarPlane = Desc->FarPlane;
 
                     Context->WireframeMode = false;
-                    Context->ClearColor = vec4f(0.01f, 0.19f, 0.31f, 0.f);
+					Context->EnableCull = true;
+
+                    //Context->ClearColor = vec4f(0.01f, 0.19f, 0.31f, 0.f);
+					Context->ClearColor = vec4f(0, 0, 0, 0);
 
                     glClearColor(Context->ClearColor.x, Context->ClearColor.y, Context->ClearColor.z, Context->ClearColor.w);
 
@@ -397,5 +400,15 @@ namespace ctx {
         glPolygonMode(GL_FRONT_AND_BACK, Context->WireframeMode ? GL_LINE : GL_FILL);
         return CurrWireframe;
     }
+
+	void SetCullMode(context *Context)
+	{
+		Context->EnableCull = !Context->EnableCull;
+
+		if (Context->EnableCull)
+			glEnable(GL_CULL_FACE);
+		else
+			glDisable(GL_CULL_FACE);
+	}
 }
 }

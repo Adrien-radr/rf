@@ -11,6 +11,9 @@ namespace log {
     FILE static     *LogFile;
     double static   LogTime = 0.0;
     path            LogFilename = "radar.log";
+#if RF_WIN32
+	HANDLE			hConsole;
+#endif
 
     void Init(context *Context)
     {
@@ -29,6 +32,10 @@ namespace log {
         CurrTime[0] = ' ';
         GetDateTime(CurrTime + 1, 63, DEFAULT_TIME_FMT);
         strncat(CurrDate + WrittenChar, CurrTime, 64);
+
+#if RF_WIN32
+		hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+#endif
 
         LogInfo("Radar Foundation Log (RF %d.%d.%d)", RF_MAJOR, RF_MINOR, RF_PATCH);
 #ifdef DEBUG
@@ -75,6 +82,13 @@ namespace log {
             "EE",
             "DB"
         };
+		// TODO - those are for WIN32, find a way to do the same for Unix
+		// default color (white on black) is 7
+		static int LogLevelColor[] = {
+			3,
+			4,
+			6
+		};
 
         char LocalBuf[256];
         va_list args;
@@ -84,14 +98,25 @@ namespace log {
 
         char Str[512];
         int CharCount = 0;
-        if(LogLevel == LOG_DEBUG || LogLevel == LOG_ERROR)
-            CharCount = snprintf(Str, 512, "%s <%s:%d> %s", LogLevelStr[LogLevel], File, Line, LocalBuf);
-        else
-            CharCount = snprintf(Str, 512, "%s %s", LogLevelStr[LogLevel], LocalBuf);
-        //int CharCount = snprintf(Str, 512, "%s <%s:%d> %s\n", LogLevelStr[LogLevel], File, Line, LocalBuf);
 
         // STD Output
-        printf("%s\n", Str);
+#if RF_WIN32
+		if (LogLevel == LOG_DEBUG || LogLevel == LOG_ERROR)
+			CharCount = snprintf(Str, 512, "<%s:%d> %s", File, Line, LocalBuf);
+		else
+			CharCount = snprintf(Str, 512, "%s", LocalBuf);
+
+		SetConsoleTextAttribute(hConsole, LogLevelColor[LogLevel]);
+		printf("%s ", LogLevelStr[LogLevel]);
+		SetConsoleTextAttribute(hConsole, 7);
+		printf("%s\n", Str);
+#else
+		if (LogLevel == LOG_DEBUG || LogLevel == LOG_ERROR)
+			CharCount = snprintf(Str, 512, "%s <%s:%d> %s", LogLevelStr[LogLevel], File, Line, LocalBuf);
+		else
+			CharCount = snprintf(Str, 512, "%s %s", LogLevelStr[LogLevel], LocalBuf);
+		printf("%s\n", Str);
+#endif
 
         // FILE Output
         fprintf(LogFile, "%s\n", Str);

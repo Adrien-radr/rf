@@ -163,8 +163,14 @@ void            RenderMesh(mesh *Mesh, uint32 GLDrawType = GL_TRIANGLES);
 
 mesh            MakeUnitCube(bool MakeAdditionalAttribs = true);
 mesh            Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions = 0);
-mesh            Make3DPlane(vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic = false);
+mesh            Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic = false);
 mesh            MakeUnitSphere(bool MakeAdditionalAttribs = true, real32 TexScale = 1.f);
+
+/// Uniform Buffer Utilities
+uint32			MakeUBO(size_t Size, GLenum DrawType = GL_STATIC_DRAW);
+void			BindUBO(uint32 ID, int Target);
+void			FillUBO(size_t Offset, size_t Size, void const *Data);
+void			DestroyUBO(uint32 ID);
 
 /// Model Utilities
 bool            ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, int AnisotropicLevel);

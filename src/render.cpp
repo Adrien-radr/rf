@@ -1336,7 +1336,7 @@ mesh Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 
     return Plane;
 }
 
-mesh MakeUnitSphere(bool MakeAdditionalAttribs, float TexScale)
+mesh MakeUnitSphere(bool MakeAdditionalAttribs, real32 TexScale)
 {
     mesh Sphere = {};
 
@@ -1447,6 +1447,31 @@ mesh MakeUnitSphere(bool MakeAdditionalAttribs, float TexScale)
     glBindVertexArray(0);
 
     return Sphere;
+}
+
+uint32 MakeUBO(size_t Size, GLenum DrawType)
+{
+	uint32 UBO = 0;
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	glBufferData(GL_UNIFORM_BUFFER, Size, NULL, DrawType);
+	return UBO;
+}
+
+void BindUBO(uint32 ID, int Target)
+{
+	glBindBufferBase(GL_UNIFORM_BUFFER, Target, ID);
+	glBindBuffer(GL_UNIFORM_BUFFER, ID);
+}
+
+void FillUBO(size_t Offset, size_t Size, void const *Data)
+{
+	glBufferSubData(GL_UNIFORM_BUFFER, Offset, Size, Data);
+}
+
+void DestroyUBO(uint32 ID)
+{
+	glDeleteBuffers(1, &ID);
 }
 
 void ComputeIrradianceCubemap(context *Context, char const *HDREnvmapFilename,
@@ -1582,10 +1607,13 @@ void ComputeIrradianceCubemap(context *Context, char const *HDREnvmapFilename,
     uint32 const MaxMipLevels = 5;
     for(uint32 mip = 0; mip < MaxMipLevels; ++mip)
     {
-        uint32 const MipW = GlossyCubemapWidth * (int)std::pow(0.5, mip);
+		rf::CheckGLError("ClearMip");
+        uint32 const MipW = (uint32)(GlossyCubemapWidth * std::pow(0.5, mip));
         uint32 const MipH = MipW;
         glBindRenderbuffer(GL_RENDERBUFFER, FBOEnvmap.DepthBufferID);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, MipW, MipH);
+
+		rf::CheckFramebufferError("Renderbufferstorage");
         glViewport(0, 0, MipW, MipH);
 
         real32 Roughness = (real32)mip / (real32)(MaxMipLevels - 1);
@@ -1595,11 +1623,12 @@ void ComputeIrradianceCubemap(context *Context, char const *HDREnvmapFilename,
             SendMat4(ViewLoc, ViewDirs[i]);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                     *HDRGlossyEnvmap, mip);
+
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glDrawElements(GL_TRIANGLES, SkyboxCube.IndexCount, GL_UNSIGNED_INT, 0);
         }
     }
-
+	rf::CheckGLError("CubemapEnvEnd");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDepthFunc(GL_LESS);
@@ -1611,6 +1640,7 @@ void ComputeIrradianceCubemap(context *Context, char const *HDREnvmapFilename,
     glDeleteProgram(ProgramCubemapPrefilter);
     DestroyFramebuffer(&FBOEnvmap);
     DestroyMesh(&SkyboxCube);
+	rf::CheckGLError("CubemapEnvEndDestroy");
 }
 
 uint32 PrecomputeGGXLUT(context *Context, uint32 Width)

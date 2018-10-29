@@ -234,7 +234,7 @@ namespace ctx {
 					Context->EnableCull = true;
 
                     //Context->ClearColor = vec4f(0.01f, 0.19f, 0.31f, 0.f);
-					Context->ClearColor = vec4f(0, 0, 0, 0);
+					Context->ClearColor = vec4f(0.9f, 0.9f, 0.9f, 1.0f);
 
                     glClearColor(Context->ClearColor.x, Context->ClearColor.y, Context->ClearColor.z, Context->ClearColor.w);
 

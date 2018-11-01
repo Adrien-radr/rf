@@ -1563,7 +1563,7 @@ inline vec3f SphericalToCartesian(float Theta, float Phi)
 // [x, y, z] -> {theta, phi}
 inline vec2f CartesianToSpherical(vec3f const &V)
 {
-    return vec2f(atan2f(sqrtf(Square(V.x) + Square(V.z)), V.y), atan2f(V.z, V.x));
+    return vec2f(acosf(V.y/sqrtf(Square(V.x) + Square(V.y) + Square(V.z))), atan2f(V.z, V.x));
 }
 
 // Creates a Frame around the normal N, returning its tangent and bitangent as out-params

@@ -579,9 +579,9 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
         // Make Texture out of the Bitmap
         Font->AtlasTextureID = Make2DTexture(Font->Buffer, Font->Width, Font->Height, 1, false, false, 1.0f,
                              GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    }
 
-    ResourceStore(&Context->RenderResources, RESOURCE_FONT, ResourceName, Font);
+		ResourceStore(&Context->RenderResources, RESOURCE_FONT, ResourceName, Font);
+    }
 
     return Font;
 }

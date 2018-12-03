@@ -31,7 +31,7 @@
 typedef float real32;
 typedef double real64;
 
-typedef char                int8;
+typedef signed char         int8;
 typedef unsigned char       uint8;
 typedef short int           int16;
 typedef unsigned short int  uint16;

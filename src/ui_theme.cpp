@@ -3,10 +3,39 @@
 #include "utils.h"
 
 namespace rf {
-namespace ui {
+	namespace ui {
 
-ui_theme Theme;
-ui_theme DefaultTheme;
+		ui_theme Theme;
+		ui_theme DefaultTheme;
+
+		const char *DefaultThemeJSON = 
+		"{															\n"
+			"\"Red\" : [1, 0, 0, 1],								\n"
+			"\"Green\" : [0, 1, 0, 1],								\n"
+			"\"Blue\" : [0, 0, 1, 1],								\n"
+			"\"Black\" : [0, 0, 0, 1],								\n"
+			"\"White\" : [1, 1, 1, 1],								\n"
+			"														\n"
+			"\"ConsoleBG\" : [0, 0, 0, 0.7],						\n"
+			"\"PanelBG\" : [0, 0, 0, 0.5],							\n"
+			"\"PanelFG\" : [0.8, 0.8, 0.8, 1],						\n"
+			"\"TitlebarBG\" : [1, 1, 1, 0.1],						\n"
+			"\"BorderBG\" : [1, 1, 1, 0.20],						\n"
+			"\"ConsoleFG\" : [1, 1, 1, 0.9],						\n"
+			"\"SliderBG\" : [1, 1, 1, 0.2],							\n"
+			"\"SliderFG\" : [0, 0, 0, 0.6],							\n"
+			"\"ProgressbarBG\" : [0, 0, 0, 0.2],					\n"
+			"\"ProgressbarFG\" : [1, 1, 1, 0.1],					\n"
+			"														\n"
+			"\"ButtonBG\" : [1, 1, 1, 0.1],							\n"
+			"\"ButtonPressedBG\" : [1, 1, 1, 0.05],					\n"
+			"														\n"
+			"\"DebugFG\" : [1, 0, 0, 1],							\n"
+			"														\n"
+			"\"ConsoleFont\" : [\"data/Roboto-Regular.ttf\", 13],	\n"
+			"\"DefaultFont\" : [\"data/Roboto-Regular.ttf\", 13],	\n"
+			"\"AwesomeFont\" : [\"data/fontawesome.ttf\", 32]		\n"
+		"}";
 
 col4f const &GetColor(theme_color Col)
 {
@@ -105,31 +134,34 @@ void ParseDefaultUIConfig(context *Context)
     path DefaultConfigPath;
     ConcatStrings(DefaultConfigPath, ctx::GetExePath(Context), "default_ui_config.json");
 
-    // If the default config doesnt exist, just crash, someone has been stupid
+	void *Content = nullptr;
+
+    // If the default config doesnt exist, create it
     if(!DiskFileExists(DefaultConfigPath))
     {
-        printf("Fatal Error : Default UI Config file bin/default_ui_config.json doesn't exist.\n");
-        exit(1);
+        //printf("Fatal Error : Default UI Config file bin/default_ui_config.json doesn't exist.\n");
+        //exit(1);
+		Content = (void*)DefaultThemeJSON;
     }
+	else
+	{
+		Content = ReadFileContents(Context, DefaultConfigPath, 0);
+		if (!Content)
+		{
+			Assert(false); // should never happen because of the file check
+		}
+	}
 
-    void *Content = ReadFileContents(Context, DefaultConfigPath, 0);
-    if(Content)
-    {
-        cJSON *root = cJSON_Parse((char*)Content);
-        if(root)
-        {
-            ParseUIConfigRoot(&DefaultTheme, root, Context);
-        }
-        else
-        {
-            printf("Fatal Error parsing UI Config File (%s) as JSON.\n", DefaultConfigPath);
-            exit(1);
-        }
-    }
-    else
-    {
-        Assert(false); // should never happen because of the file check
-    }
+	cJSON *root = cJSON_Parse((char*)Content);
+	if (root)
+	{
+		ParseUIConfigRoot(&DefaultTheme, root, Context);
+	}
+	else
+	{
+		printf("Fatal Error parsing UI Config File (%s) as JSON.\n", DefaultConfigPath);
+		exit(1);
+	}
 }
 
 void ParseUIConfig(context *Context, path const ConfigPath)

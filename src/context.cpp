@@ -256,14 +256,28 @@ namespace ctx {
 
                     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-                    Context->RenderResources.DefaultDiffuseTexture = 
-                        ResourceLoad2DTexture(Context, "data/default_diffuse.png", false, false, 1);
+					vec3i texColor = vec3i(255, 255, 255);
+					Context->RenderResources.DefaultDiffuseTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
+					*Context->RenderResources.DefaultDiffuseTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
+						GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
-                    Context->RenderResources.DefaultNormalTexture= 
-                        ResourceLoad2DTexture(Context, "data/default_normal.png", false, false, 1);
+					texColor = vec3i(127, 127, 255);
+					Context->RenderResources.DefaultNormalTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
+					*Context->RenderResources.DefaultNormalTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
+						GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+
+					texColor = vec3i(0, 0, 0);
+					Context->RenderResources.DefaultEmissiveTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
+					*Context->RenderResources.DefaultEmissiveTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
+						GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+                    //Context->RenderResources.DefaultDiffuseTexture = 
+                        //ResourceLoad2DTexture(Context, "data/default_diffuse.png", false, false, 1);
+
+                    //Context->RenderResources.DefaultNormalTexture= 
+                        //ResourceLoad2DTexture(Context, "data/default_normal.png", false, false, 1);
                     
-                    Context->RenderResources.DefaultEmissiveTexture =
-                        ResourceLoad2DTexture(Context, "data/default_emissive.png", false, false, 1);
+                    //Context->RenderResources.DefaultEmissiveTexture =
+                        //ResourceLoad2DTexture(Context, "data/default_emissive.png", false, false, 1);
                 }
                 else
                 {

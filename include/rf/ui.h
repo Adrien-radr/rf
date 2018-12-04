@@ -32,7 +32,7 @@ namespace ui {
     bool HasFocus();
 
     // DecorationFlags is of the type decoration_flag from definitions.h
-    void BeginPanel(uint32* ID, char const *PanelTitle, vec3i *Position, vec2i *Size, theme_color Color, 
+    void BeginPanel(uint32* ID, char const *PanelTitle, vec3i *Position, vec2i *Size, theme_color Color = rf::ui::COLOR_PANELBG, 
                     uint32 DecorationFlags = DECORATION_TITLEBAR | DECORATION_RESIZE | DECORATION_BORDER);
     void EndPanel();
 

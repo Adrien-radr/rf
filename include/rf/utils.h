@@ -15,12 +15,12 @@ size_t  GetDateTime(char *Dst, size_t DstSize, char const *Fmt);
 void    PlatformSleep(uint32 MillisecondsToSleep);
 
 /// Retrieve system information from the OS (refer to system_info struct)
-void	GetSystemInfo( system_info &SysInfo );
+void	GetSystemInfo(system_info &SysInfo);
 
 /// Get and set the system's clipboard content
 /// Returns a char string that HAS TO BE FREED by the caller
 char	*GetClipboardContent();
-void	SetClipboardContent( char *Content );
+void	SetClipboardContent(char *Content);
 
 /// Concatenate 2 strings so that Dst = Str1 + Str2 (in std::string terms)
 void    ConcatStrings(path Dst, path const Str1, path const Str2);
@@ -60,7 +60,7 @@ uint16  UTF8CharToInt(char const *Str, size_t *CharAdvance);
 
 /// Returns a pointer to the first non-whitespace character in a pointed string buffer
 /// This does not erase anything
-char *GetFirstNonWhitespace( char *Src );
+char *GetFirstNonWhitespace(char *Src);
 
 template<typename T>
 inline T JSON_Get(cJSON *Root, char const *ValueName, T const &DefaultValue)
@@ -70,81 +70,98 @@ inline T JSON_Get(cJSON *Root, char const *ValueName, T const &DefaultValue)
 template<>
 inline int JSON_Get(cJSON *Root, char const *ValueName, int const &DefaultValue)
 {
-    cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
-    if(Obj)
-        return Obj->valueint;
-    return DefaultValue;
+	if (Root)
+	{
+		cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
+		if (Obj)
+			return Obj->valueint;
+	}
+	return DefaultValue;
 }
 
 template<>
 inline double JSON_Get(cJSON *Root, char const *ValueName, double const &DefaultValue)
 {
-    cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
-    if(Obj)
-        return Obj->valuedouble;
-    return DefaultValue;
+	if (Root)
+	{
+		cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
+		if (Obj)
+			return Obj->valuedouble;
+	}
+	return DefaultValue;
 }
 
 template<>
 inline vec3f JSON_Get(cJSON *Root, char const *ValueName, vec3f const &DefaultValue)
 {
-    cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
-    if(Obj && cJSON_GetArraySize(Obj) == 3)
-    {
-        vec3f Ret;
-        Ret.x = (real32)cJSON_GetArrayItem(Obj, 0)->valuedouble;
-        Ret.y = (real32)cJSON_GetArrayItem(Obj, 1)->valuedouble;
-        Ret.z = (real32)cJSON_GetArrayItem(Obj, 2)->valuedouble;
-        return Ret;
-    }
+	if (Root)
+	{
+		cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
+		if (Obj && cJSON_GetArraySize(Obj) == 3)
+		{
+			vec3f Ret;
+			Ret.x = (real32)cJSON_GetArrayItem(Obj, 0)->valuedouble;
+			Ret.y = (real32)cJSON_GetArrayItem(Obj, 1)->valuedouble;
+			Ret.z = (real32)cJSON_GetArrayItem(Obj, 2)->valuedouble;
+			return Ret;
+		}
+	}
 
-    return DefaultValue;
+	return DefaultValue;
 }
 
 template<>
 inline vec4f JSON_Get(cJSON *Root, char const *ValueName, vec4f const &DefaultValue)
 {
-    cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
-    if(Obj && cJSON_GetArraySize(Obj) == 4)
-    {
-        vec4f Ret;
-        Ret.x = (real32)cJSON_GetArrayItem(Obj, 0)->valuedouble;
-        Ret.y = (real32)cJSON_GetArrayItem(Obj, 1)->valuedouble;
-        Ret.z = (real32)cJSON_GetArrayItem(Obj, 2)->valuedouble;
-        Ret.w = (real32)cJSON_GetArrayItem(Obj, 3)->valuedouble;
-        return Ret;
-    }
+	if (Root)
+	{
+		cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
+		if (Obj && cJSON_GetArraySize(Obj) == 4)
+		{
+			vec4f Ret;
+			Ret.x = (real32)cJSON_GetArrayItem(Obj, 0)->valuedouble;
+			Ret.y = (real32)cJSON_GetArrayItem(Obj, 1)->valuedouble;
+			Ret.z = (real32)cJSON_GetArrayItem(Obj, 2)->valuedouble;
+			Ret.w = (real32)cJSON_GetArrayItem(Obj, 3)->valuedouble;
+			return Ret;
+		}
+	}
 
-    return DefaultValue;
+	return DefaultValue;
 }
 
 template<>
 inline col4f JSON_Get(cJSON *Root, char const *ValueName, col4f const &DefaultValue)
 {
-    cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
-    if(Obj && cJSON_GetArraySize(Obj) == 4)
-    {
-        col4f Ret;
-        Ret.x = (real32)cJSON_GetArrayItem(Obj, 0)->valuedouble;
-        Ret.y = (real32)cJSON_GetArrayItem(Obj, 1)->valuedouble;
-        Ret.z = (real32)cJSON_GetArrayItem(Obj, 2)->valuedouble;
-        Ret.w = (real32)cJSON_GetArrayItem(Obj, 3)->valuedouble;
-        return Ret;
-    }
+	if (Root)
+	{
+		cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
+		if (Obj && cJSON_GetArraySize(Obj) == 4)
+		{
+			col4f Ret;
+			Ret.x = (real32)cJSON_GetArrayItem(Obj, 0)->valuedouble;
+			Ret.y = (real32)cJSON_GetArrayItem(Obj, 1)->valuedouble;
+			Ret.z = (real32)cJSON_GetArrayItem(Obj, 2)->valuedouble;
+			Ret.w = (real32)cJSON_GetArrayItem(Obj, 3)->valuedouble;
+			return Ret;
+		}
+	}
 
-    return DefaultValue;
+	return DefaultValue;
 }
 
 template<>
 inline std::string JSON_Get(cJSON *Root, char const *ValueName, std::string const &DefaultValue)
 {
-    cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
-    std::string Ret;
-    if(Obj)
-        Ret = std::string(Obj->valuestring);
-    else
-        Ret = DefaultValue;
-    return Ret;
+	if (Root)
+	{
+		cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
+		std::string Ret;
+		if (Obj)
+			return std::string(Obj->valuestring);
+	}
+
+	return DefaultValue;
 }
 
 }

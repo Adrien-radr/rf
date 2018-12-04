@@ -36,15 +36,11 @@ struct ui_theme
     font  *AwesomeFont;
 };
 
-// Defined in ui_theme.cpp, JSON description of the default theme
-extern const char *DefaultThemeJSON;
-
 // Defined in ui_theme.cpp
 extern ui_theme Theme;
 extern ui_theme DefaultTheme;
 
 void ParseUIConfig(context *Context, path const ConfigPath);
-void ParseDefaultUIConfig(context *Context);
 }
 }
 #endif

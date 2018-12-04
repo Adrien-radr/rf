@@ -131,6 +131,8 @@ namespace ctx {
             glUseProgram(Context->Shaders2D[i]);
             SendMat4(glGetUniformLocation(Context->Shaders2D[i], "ProjMatrix"), Context->ProjectionMatrix2D);
         }
+
+		glUseProgram(0);
     }
 
     bool WindowResized(context *Context)
@@ -257,9 +259,9 @@ namespace ctx {
                     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 					vec3i texColor = vec3i(255, 255, 255);
-					Context->RenderResources.DefaultDiffuseTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
-					*Context->RenderResources.DefaultDiffuseTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
-						GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+					//Context->RenderResources.DefaultDiffuseTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
+					//*Context->RenderResources.DefaultDiffuseTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
+						//GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
 					texColor = vec3i(127, 127, 255);
 					Context->RenderResources.DefaultNormalTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
@@ -270,8 +272,8 @@ namespace ctx {
 					Context->RenderResources.DefaultEmissiveTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
 					*Context->RenderResources.DefaultEmissiveTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
 						GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-                    //Context->RenderResources.DefaultDiffuseTexture = 
-                        //ResourceLoad2DTexture(Context, "data/default_diffuse.png", false, false, 1);
+                    Context->RenderResources.DefaultDiffuseTexture = 
+                        ResourceLoad2DTexture(Context, "data/default_diffuse.png", false, false, 1);
 
                     //Context->RenderResources.DefaultNormalTexture= 
                         //ResourceLoad2DTexture(Context, "data/default_normal.png", false, false, 1);
@@ -351,20 +353,23 @@ namespace ctx {
 
     void Destroy(context *Context)
     {
-        glDeleteProgram(Context->ProgramPostProcess);
-        //sound::Destroy();
-        ResourceFree(&Context->RenderResources);
+		if (Context)
+		{
+			glDeleteProgram(Context->ProgramPostProcess);
+			//sound::Destroy();
+			ResourceFree(&Context->RenderResources);
 
-        if(Context->Window)
-        {
-            glfwDestroyCursor(CursorNormal);
-            glfwDestroyCursor(CursorHResize);
-            glfwDestroyCursor(CursorVResize);
-            glfwDestroyWindow(Context->Window);
-        }
-        glfwTerminate();
+			if (Context->Window)
+			{
+				glfwDestroyCursor(CursorNormal);
+				glfwDestroyCursor(CursorHResize);
+				glfwDestroyCursor(CursorVResize);
+				glfwDestroyWindow(Context->Window);
+			}
+			glfwTerminate();
 
-        log::Destroy();
+			log::Destroy();
+		}
     }
 
     path const &GetExePath(context *Context)

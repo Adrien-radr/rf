@@ -17,8 +17,8 @@ bool static FrameReleasedMouseButton[8] = {};
 
 int  static FrameMouseWheel = 0;
 
-int  static ResizeWidth;
-int  static ResizeHeight;
+int  static ResizeWidth = 800;
+int  static ResizeHeight = 600;
 bool static Resized = true;
 
 GLFWcursor static *CursorNormal = NULL;
@@ -135,7 +135,7 @@ namespace ctx {
 		glUseProgram(0);
     }
 
-    bool WindowResized(context *Context)
+    static bool WindowResized(context *Context)
     {
         if(Resized)
         {
@@ -307,7 +307,9 @@ namespace ctx {
         }
 
         ui::Init(Context);
-        
+
+		rf::BindTexture2D(0, 0);
+
         return Context;
     }
 
@@ -319,6 +321,7 @@ namespace ctx {
         memset(FramePressedMouseButton, 0, sizeof(FramePressedMouseButton));
 
         FrameMouseWheel = 0;
+		Context->HasResized = false;
 
         glfwPollEvents();
 
@@ -335,11 +338,6 @@ namespace ctx {
             Context->IsRunning = false;
         }
 
-        if(FrameReleasedKeys[KEY_ESCAPE])
-        {
-            Context->IsRunning = false;
-        }
-
         // Get Player controls
         for(int i = KEY_FIRST; i <= KEY_LAST; ++i)
         {
@@ -350,6 +348,11 @@ namespace ctx {
         Input->MouseRight = BuildMouseState(GLFW_MOUSE_BUTTON_RIGHT);
 
         Input->dTimeFixed = 0.1f; // 100FPS
+
+		if (WindowResized(Context))
+		{
+			Context->HasResized = true;
+		}
     }
 
     void Destroy(context *Context)

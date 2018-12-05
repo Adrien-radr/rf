@@ -160,7 +160,6 @@ void ReloadShaders(context *Context)
 		"#version 400\n"
 
 		"in vec2 v_texcoord;\n"
-		"in vec4 v_color;\n"
 
 		"uniform sampler2D Texture0;\n"
 		"uniform vec4 Color;\n"
@@ -177,7 +176,6 @@ void ReloadShaders(context *Context)
 		"#version 400\n"
 
 		"in vec2 v_texcoord;\n"
-		"in vec4 v_color;\n"
 
 		"uniform sampler2D Texture0;\n"
 
@@ -187,6 +185,13 @@ void ReloadShaders(context *Context)
 		"{\n"
 		"    frag_color = texture(Texture0, v_texcoord);\n"
 		"}";
+
+	// free programs if they already exist
+	if (Program)
+		glDeleteProgram(Program);
+
+	if (ProgramRGBTexture)
+		glDeleteProgram(ProgramRGBTexture);
 
 	Program = BuildShaderFromSource(Context, VSSrc, FSSrc);
 	glUseProgram(Program);

@@ -1216,7 +1216,7 @@ mesh MakeUnitCube(bool MakeAdditionalAttribs)
 }
 
 // NOTE - Start is Top Left corner. End is Bottom Right corner.
-mesh Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions)
+mesh Make2DQuad(context *Context, vec2f Start, vec2f End, int Subdivisions)
 {
     mesh Quad = {};
 
@@ -1227,7 +1227,7 @@ mesh Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions)
     uint32 VCount1D = QuadCount1D + 1;
     uint32 VertexCount = VCount1D * VCount1D;
 
-    vec2f Rect((real32)(End.x-Start.x), (real32)(End.y-Start.y));
+    vec2f Rect(End.x-Start.x, End.y-Start.y);
     vec2f Stride = Rect / (real32)QuadCount1D;
     vec2f TexStride = vec2f(1,1) / (real32)QuadCount1D;
 
@@ -1240,7 +1240,7 @@ mesh Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions)
     {
         for(uint32 i = 0; i < VCount1D; ++i)
         {
-            Positions[j * VCount1D + i] = vec2f(Start) + vec2f(i * Stride.x, j * Stride.y);
+            Positions[j * VCount1D + i] = Start + vec2f(i * Stride.x, j * Stride.y);
             Texcoords[j * VCount1D + i] = vec2f(0.f, 1.f) + vec2f(i * TexStride.x, j * -TexStride.y);
         }
     }

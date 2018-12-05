@@ -162,7 +162,7 @@ void            DestroyMesh(mesh *Mesh);
 void            RenderMesh(mesh *Mesh, uint32 GLDrawType = GL_TRIANGLES);
 
 mesh            MakeUnitCube(bool MakeAdditionalAttribs = true);
-mesh            Make2DQuad(context *Context, vec2i Start, vec2i End, int Subdivisions = 0);
+mesh            Make2DQuad(context *Context, vec2f Start, vec2f End, int Subdivisions = 0);
 mesh            Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic = false);
 mesh            MakeUnitSphere(bool MakeAdditionalAttribs = true, real32 TexScale = 1.f);
 

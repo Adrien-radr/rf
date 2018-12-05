@@ -64,6 +64,7 @@ struct context
 
     bool IsRunning;
     bool IsValid;
+	bool HasResized;	// true if window was resized during the frame
 };
 
 namespace ctx
@@ -78,7 +79,7 @@ namespace ctx
     context *Init(context_descriptor const *Desc);
     void Destroy(context *Context);
 
-    bool WindowResized(context *Context);
+    //bool WindowResized(context *Context);
     void UpdateShaderProjection(context *Context);
     void GetFrameInput(context *Context, input *Input);
 

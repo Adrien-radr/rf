@@ -232,7 +232,7 @@ void BeginFrame(input *Input)
 	{
 		FocusNext = { NULL, 0, PanelOrder[0] };
 	}
-	if (MOUSE_UP(Input->MouseLeft))
+	if (MOUSE_RELEASED(Input->MouseLeft))
 	{
 		MouseHold = NULL;
 		ResizeHold = false;
@@ -607,7 +607,7 @@ bool MakeButton(uint32 *ID, char const *ButtonText, theme_font FontStyle, vec2i 
 		{
 			*ID = 1;
 		}
-		else if (MOUSE_UP(Input->MouseLeft) && PointInRectangle(MousePos, TL, BR))
+		else if (MOUSE_RELEASED(Input->MouseLeft) && PointInRectangle(MousePos, TL, BR))
 		{
 			*ID = 0;
 			return true;
@@ -615,7 +615,7 @@ bool MakeButton(uint32 *ID, char const *ButtonText, theme_font FontStyle, vec2i 
 	}
 
 	// Release button (without activation) if it was pressed but not released within bounds
-	if (*ID > 0 && MOUSE_UP(Input->MouseLeft) && !PointInRectangle(MousePos, TL, BR))
+	if (*ID > 0 && MOUSE_RELEASED(Input->MouseLeft) && !PointInRectangle(MousePos, TL, BR))
 	{
 		*ID = 0;
 	}

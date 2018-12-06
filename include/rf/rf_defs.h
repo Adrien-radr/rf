@@ -11,11 +11,11 @@
 #define UI_MAXSTACKOBJECT 256
 
 #define KEY_HIT(KeyState) ((KeyState >> 0x1) & 1)
-#define KEY_UP(KeyState) ((KeyState >> 0x2) & 1)
-#define KEY_DOWN(KeyState) ((KeyState >> 0x3) & 1)
+#define KEY_RELEASED(KeyState) ((KeyState >> 0x2) & 1)
+#define KEY_PRESSED(KeyState) ((KeyState >> 0x3) & 1)
 #define MOUSE_HIT(MouseState) KEY_HIT(MouseState)
-#define MOUSE_UP(MouseState) KEY_UP(MouseState)
-#define MOUSE_DOWN(MouseState) KEY_DOWN(MouseState)
+#define MOUSE_RELEASED(MouseState) KEY_RELEASED(MouseState)
+#define MOUSE_PRESSED(MouseState) KEY_PRESSED(MouseState)
 
 /// Memory pool and arena helper functions
 namespace rf {

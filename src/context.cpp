@@ -184,6 +184,8 @@ context *Init(context_descriptor const *Desc)
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 #endif
+		// TODO - AA in config
+		glfwWindowHint(GLFW_SAMPLES, 4);
 
 		Context->Window = glfwCreateWindow(Desc->WindowWidth, Desc->WindowHeight, Desc->ExecutableName, NULL, NULL);
 		if (Context->Window)

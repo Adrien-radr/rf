@@ -1270,6 +1270,15 @@ mesh Make2DQuad(context *Context, vec2f Start, vec2f End, int Subdivisions)
     return Quad;
 }
 
+mesh Make2DCircle(context *Context, vec2f Center, real32 Radius, int Segments)
+{
+	mesh Circle = {};
+
+	uint32 nVerts = Segments + 1;
+
+	return Circle;
+}
+
 mesh Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic)
 {
     mesh Plane = {};

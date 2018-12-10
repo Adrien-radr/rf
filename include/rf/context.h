@@ -15,15 +15,16 @@ namespace rf {
 
 struct context_descriptor
 {
-    memory_arena *SessionArena;
-    memory_arena *ScratchArena;
+    memory_arena	*SessionArena;
+    memory_arena	*ScratchArena;
 
-    real32 WindowX, WindowY;        // position (topleft origin)
-    int WindowWidth, WindowHeight;  // size
-    bool VSync;
-    real32 FOV;
-    real32 NearPlane, FarPlane;
-    path ExecutableName;
+    real32			WindowX, WindowY;			// position (topleft origin)
+    int				WindowWidth, WindowHeight;	// size
+    bool			VSync;
+    real32			FOV;
+    real32			NearPlane, FarPlane;
+    path			ExecutableName;
+	int32			AALevel;
 };
 
 struct context
@@ -88,8 +89,6 @@ namespace ctx
     void RegisterShader2D(context *Context, uint32 ProgramID);
 
     path const &GetExePath(context *Context);
-
-    void *AllocScratch(context *Context, size_t Size);
 
     void SetCursor(context *Context, cursor_type CursorType);
     void ShowCursor(context *Context, bool Val);

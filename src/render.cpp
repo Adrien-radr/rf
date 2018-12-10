@@ -179,7 +179,7 @@ image *ResourceLoadImage(context *Context, path const Filename, bool IsFloat, bo
         return (image*)LoadedResource;
     }
 
-    image *Image = (image*)PushArenaStruct(Context->SessionArena, image);
+    image *Image = Alloc<image>(Context->SessionArena);
     stbi_set_flip_vertically_on_load(FlipY ? 1 : 0); // NOTE - Flip Y so textures are Y-descending
 
     if(IsFloat)
@@ -343,7 +343,7 @@ uint32 *ResourceLoad2DTexture(context *Context, path const Filename, bool IsFloa
         return (uint32*)LoadedResource;
     }
 
-    uint32 *Tex = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
+    uint32 *Tex = Alloc<uint32>(Context->SessionArena);
     *Tex = Make2DTexture(ResourceLoadImage(Context, Filename, IsFloat, true, ForceNumChannel),
                          IsFloat, FloatHalfPrecision, AnisotropicLevel, MagFilter, MinFilter, WrapS, WrapT);
 
@@ -492,6 +492,7 @@ void FramebufferAttachBuffer(frame_buffer *FB, uint32 Attachment, uint32 Channel
 font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight, int Char0, int CharN)
 {
     if(FontHeight > 256) FontHeight = 256; // upper bound on font height
+	if ((CharN - Char0) <= 0) return nullptr;
     real32 PixelHeight = (real32)FontHeight;
 
     path ResourceName;
@@ -506,7 +507,7 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
         return (font*)LoadedResource;
     }
 
-    font *Font = (font*)PushArenaStruct(Context->SessionArena, font);
+    font *Font = Alloc<font>(Context->SessionArena);
 
     void *Contents = ReadFileContents(Context, Filename, 0);
     if(Contents)
@@ -525,8 +526,8 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
         Font->NumGlyphs = STBFont.numGlyphs;
         Font->Char0 = Char0;
         Font->CharN = CharN;
-        Font->Buffer = (uint8*)PushArenaData(Context->SessionArena, Font->Width*Font->Height);
-        Font->Glyphs = (glyph*)PushArenaData(Context->SessionArena, sizeof(glyph) * (Font->CharN - Font->Char0));
+        Font->Buffer = Alloc<uint8>(Context->SessionArena, (uint32)(Font->Width*Font->Height));
+        Font->Glyphs = Alloc<glyph>(Context->SessionArena, (uint32)(Font->CharN - Font->Char0));
         Font->LineGap = Ascent - Descent;
         Font->Ascent = Ascent;
         Font->MaxGlyphWidth = 0;
@@ -601,7 +602,7 @@ uint32 _CompileShader(context *Context, char const *Src, int Type)
         GLint Len;
         glGetShaderiv(Shader, GL_INFO_LOG_LENGTH, &Len);
 
-        GLchar *Log = (GLchar*) ctx::AllocScratch(Context, Len);
+		GLchar *Log = Alloc<GLchar>(Context->ScratchArena, Len);
         glGetShaderInfoLog(Shader, Len, NULL, Log);
 
         LogError("Shader Compilation Error\n"
@@ -701,7 +702,7 @@ uint32 BuildShaderFromSource(context *Context, char const *VSrc, char const *FSr
         GLint Len;
         glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &Len);
 
-        GLchar *Log = (GLchar*) ctx::AllocScratch(Context, Len);
+        GLchar *Log = Alloc<GLchar>(Context->ScratchArena, Len);
         glGetProgramInfoLog(ProgramID, Len, NULL, Log);
 
         LogError("Shader Program link error : \n"
@@ -998,9 +999,9 @@ display_text MakeDisplayText(context *Context, font *Font, char const *Msg, int 
     uint32 PS = 4 * 3;
     uint32 TS = 4 * 2;
 
-    real32 *Positions = (real32*)ctx::AllocScratch(Context, 3 * VertexCount * sizeof(real32));
-    real32 *Texcoords = (real32*)ctx::AllocScratch(Context, 2 * VertexCount * sizeof(real32));
-    uint32 *Indices = (uint32*)ctx::AllocScratch(Context, IndexCount * sizeof(uint32));
+	real32 *Positions = Alloc<real32>(Context->ScratchArena, 3 * VertexCount);
+    real32 *Texcoords = Alloc<real32>(Context->ScratchArena, 2 * VertexCount);
+    uint32 *Indices = Alloc<uint32>(Context->ScratchArena, IndexCount);
 
     int X = 0, Y = 0;
     for(uint32 i = 0; i < MsgLength; ++i)
@@ -1231,9 +1232,9 @@ mesh Make2DQuad(context *Context, vec2f Start, vec2f End, int Subdivisions)
     vec2f Stride = Rect / (real32)QuadCount1D;
     vec2f TexStride = vec2f(1,1) / (real32)QuadCount1D;
 
-    vec2f *Positions = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));
-    vec2f *Texcoords = (vec2f*)ctx::AllocScratch(Context, VertexCount * sizeof(vec2f));
-    uint16 *Indices  = (uint16*)ctx::AllocScratch(Context, Quad.IndexCount * sizeof(uint16));
+	vec2f *Positions = Alloc<vec2f>(Context->ScratchArena, VertexCount);
+    vec2f *Texcoords = Alloc<vec2f>(Context->ScratchArena, VertexCount);
+    uint16 *Indices  = Alloc<uint16>(Context->ScratchArena, Quad.IndexCount);
 
     // vertices ordered from (top left) to (bottom right), line by line as an array
     for(uint32 j = 0; j < VCount1D; ++j)
@@ -1284,17 +1285,17 @@ mesh Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 
     mesh Plane = {};
 
     uint32 BaseSize = Square(Subdivisions);
-    size_t PositionsSize = 4 * BaseSize * sizeof(vec3f);
-    size_t NormalsSize = 4 * BaseSize * sizeof(vec3f);
-    size_t TexcoordsSize = 4 * BaseSize * sizeof(vec2f);
-    size_t IndicesSize = 6 * BaseSize * sizeof(uint32);
-    size_t TangentsSize = 4 * BaseSize * sizeof(vec4f);
+    uint32 PositionsSize = 4 * BaseSize * sizeof(vec3f);
+    uint32 NormalsSize = 4 * BaseSize * sizeof(vec3f);
+    uint32 TexcoordsSize = 4 * BaseSize * sizeof(vec2f);
+    uint32 IndicesSize = 6 * BaseSize * sizeof(uint32);
+    uint32 TangentsSize = 4 * BaseSize * sizeof(vec4f);
 
-    vec3f *Positions = (vec3f*)ctx::AllocScratch(Context, PositionsSize);
-    vec3f *Normals = (vec3f*)ctx::AllocScratch(Context, NormalsSize);
-    vec2f *Texcoords = (vec2f*)ctx::AllocScratch(Context, TexcoordsSize);
-    vec4f *Tangents = (vec4f*)ctx::AllocScratch(Context, TangentsSize);
-    uint32 *Indices = (uint32*)ctx::AllocScratch(Context, IndicesSize);
+	vec3f *Positions = Alloc<vec3f>(Context->ScratchArena, PositionsSize);
+    vec3f *Normals = Alloc<vec3f>(Context->ScratchArena, NormalsSize);
+    vec2f *Texcoords = Alloc<vec2f>(Context->ScratchArena, TexcoordsSize);
+    vec4f *Tangents = Alloc<vec4f>(Context->ScratchArena, TangentsSize);
+    uint32 *Indices = Alloc<uint32>(Context->ScratchArena, IndicesSize);
 
     vec2i SubdivDim = Dimension / Subdivisions;
     vec2f TexMax = vec2f(Dimension) / (real32)TextureRepeatCount;

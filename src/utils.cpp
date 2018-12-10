@@ -68,7 +68,7 @@ void *ReadFileContents(context *Context, path const Filename, int32 *FileSize)
         {
             int32 Size = ftell(fp);
             rewind(fp);
-            Contents = (char*)ctx::AllocScratch(Context, Size+1);
+			Contents = Alloc<char>(Context->ScratchArena, Size + 1);
             size_t Read = fread(Contents, Size, 1, fp);
             if(Read != 1)
             {

@@ -107,7 +107,7 @@ void ResourceFree(render_resources *RenderResources)
 
 void CheckGLError(char const *Mark)
 {
-    D(
+    D_ONLY(
     uint32 Err = glGetError();
     if(Err != GL_NO_ERROR)
     {
@@ -146,7 +146,7 @@ void CheckGLError(char const *Mark)
 
 void CheckFramebufferError(char const *Mark)
 {
-    D(
+    D_ONLY(
     uint32 Err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if(Err != GL_FRAMEBUFFER_COMPLETE)
     {

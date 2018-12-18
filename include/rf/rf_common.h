@@ -59,9 +59,9 @@ typedef char path[MAX_PATH];
 #endif
 
 #ifdef DEBUG
-#define D(x) x
+#define D_ONLY(x) x
 #else
-#define D(x)
+#define D_ONLY(x)
 #endif
 
 #define KB (1024llu)

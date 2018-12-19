@@ -233,6 +233,14 @@ context *Init(context_descriptor const *Desc)
 				glGetIntegerv(GL_MAX_PATCH_VERTICES, &MaxTessPatchVertices);
 				LogInfo("GL Max Tesselation Patch Vertices : %d", MaxTessPatchVertices);
 
+				int MaxVertexUniforms = 0, MaxFragmentUniforms = 0, MaxGeomUniforms = 0, MaxUBOSize = 0;
+				glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &MaxVertexUniforms);
+				glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &MaxFragmentUniforms);
+				glGetIntegerv(GL_MAX_GEOMETRY_UNIFORM_COMPONENTS, &MaxGeomUniforms);
+				glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &MaxUBOSize);
+				LogInfo("GL Max Uniforms : [V] %d [F] %d [G] %d", MaxVertexUniforms, MaxFragmentUniforms, MaxGeomUniforms);
+				LogInfo("GL Max UBO Block Size : %d", MaxUBOSize);
+
 				ResizeWidth = Desc->WindowWidth;
 				ResizeHeight = Desc->WindowHeight;
 				Context->WindowWidth = Desc->WindowWidth;

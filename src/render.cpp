@@ -770,6 +770,11 @@ void SendMat4(uint32 Loc, mat4f value)
     glUniformMatrix4fv(Loc, 1, GL_FALSE, (GLfloat const *) value);
 }
 
+void SendMat3(uint32 Loc, mat3f value)
+{
+	glUniformMatrix3fv(Loc, 1, GL_FALSE, (GLfloat const *) value);
+}
+
 void SendInt(uint32 Loc, int value)
 {
     glUniform1i(Loc, value);

@@ -183,6 +183,7 @@ uint32          BuildShaderFromSource(context *Context, char const *VSrc, char c
 void            SendVec2(uint32 Loc, vec2f value);
 void            SendVec3(uint32 Loc, vec3f value);
 void            SendVec4(uint32 Loc, vec4f value);
+void			SendMat3(uint32 Loc, mat3f value);
 void            SendMat4(uint32 Loc, mat4f value);
 void            SendInt(uint32 Loc, int value);
 void            SendFloat(uint32 Loc, real32 value);

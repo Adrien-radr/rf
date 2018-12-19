@@ -673,9 +673,9 @@ public:
 		T a12, T a22, T a32,
 		T a13, T a23, T a33)
 	{
-		M[0] = vec4<T>(a11, a12, a13);
-		M[1] = vec4<T>(a21, a22, a23);
-		M[2] = vec4<T>(a31, a32, a33);
+		M[0] = vec3<T>(a11, a12, a13);
+		M[1] = vec3<T>(a21, a22, a23);
+		M[2] = vec3<T>(a31, a32, a33);
 	}
 
 
@@ -816,6 +816,27 @@ public:
 			}
 		}
 		return R;
+	}
+
+	mat3<T> Rotate(T rot)
+	{
+		T c = std::cos(rot);
+		T s = std::sin(rot);
+		return mat3<T>(	   c,	-s, 0.0f,
+						   s,	 c, 0.0f,
+						0.0f, 0.0f, 1.0f);
+	}
+
+	mat3<T> Scale(const vec2<T> &scale)
+	{
+		return mat3<T>(scale.x, 0, 0, 0, scale.y, 0, 0, 0, 1);
+	}
+	
+	void FromTRS(const vec2<T> &pos, T rot, const vec2<T> &scale)
+	{
+		*this = mat3<T>::Scale(scale);
+		*this *= mat3<T>::Rotate(rot);
+		M[2] = vec3<T>(pos.x, pos.y, 1.f);
 	}
 
 	mat3<T> Inverse()

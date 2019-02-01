@@ -34,8 +34,8 @@ real32 Interpolate(real32 const *Wavelengths, real32 const *WavelengthFunctions,
 /// Returns the sRGB color channels for a given set of wavelength functions (i.e., wavelength values associated to each wavelength index)
 /// Uses Interpolate() above internally for each R,G,B color channel
 /// @param Scale : constant scale for each three R,G,B channels
-vec3f ScatteringSpectrumToSRGB(real32 const *Wavelengths, real32 const *WavelengthFunctions, int N, real32 Scale);
+vec3f ConvertSpectrumToSRGB(real32 const *Wavelengths, real32 const *WavelengthFunctions, int N, real32 Scale);
 
 /// Converts a function of wavelength to linear sRGB.
 /// Wavelengths and Spectrum arrays have the same size N
-vec3f ConvertSpectrumToSRGB(real32 const *Wavelengths, real32 *Spectrum, int N);
+vec3f ConvertSpectrumToLuminanceFactors(real32 const *Wavelengths, real32 *Spectrum, int N);

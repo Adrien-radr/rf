@@ -133,7 +133,7 @@ real32 Interpolate(real32 const *Wavelengths, real32 const *WavelengthFunctions,
 	return WavelengthFunctions[N - 1];
 }
 
-vec3f ScatteringSpectrumToSRGB(real32 const *Wavelengths, real32 const *WavelengthFunctions, int N, real32 Scale)
+vec3f ConvertSpectrumToSRGB(real32 const *Wavelengths, real32 const *WavelengthFunctions, int N, real32 Scale)
 {
 	real32 R = Interpolate(Wavelengths, WavelengthFunctions, N, LAMBDA_R) * Scale;
 	real32 G = Interpolate(Wavelengths, WavelengthFunctions, N, LAMBDA_G) * Scale;
@@ -141,9 +141,9 @@ vec3f ScatteringSpectrumToSRGB(real32 const *Wavelengths, real32 const *Waveleng
 	return vec3f(R, G, B);
 }
 
-vec3f ConvertSpectrumToSRGB(real32 const *Wavelengths, real32 *Spectrum, int N)
+vec3f ConvertSpectrumToLuminanceFactors(real32 const *Wavelengths, real32 *Spectrum, int N)
 {
-	vec3f xyz(0), SRGB(0);
+	vec3f xyz(0), rgb(0);
 
 	int const dLambda = 1;
 	for (int lambda = LAMBDA_MIN; lambda < LAMBDA_MAX; lambda += dLambda)
@@ -154,9 +154,9 @@ vec3f ConvertSpectrumToSRGB(real32 const *Wavelengths, real32 *Spectrum, int N)
 		xyz.z += CieColorMatchingFunctionTableValue((real32)lambda, 3) * Val;
 	}
 
-	SRGB.x = MAX_LUMINOUS_EFFICACY * (XYZ_TO_SRGB[0] * xyz.x + XYZ_TO_SRGB[1] * xyz.y + XYZ_TO_SRGB[2] * xyz.z) * dLambda;
-	SRGB.y = MAX_LUMINOUS_EFFICACY * (XYZ_TO_SRGB[3] * xyz.x + XYZ_TO_SRGB[4] * xyz.y + XYZ_TO_SRGB[5] * xyz.z) * dLambda;
-	SRGB.z = MAX_LUMINOUS_EFFICACY * (XYZ_TO_SRGB[6] * xyz.x + XYZ_TO_SRGB[7] * xyz.y + XYZ_TO_SRGB[8] * xyz.z) * dLambda;
+	rgb.x = MAX_LUMINOUS_EFFICACY * (XYZ_TO_SRGB[0] * xyz.x + XYZ_TO_SRGB[1] * xyz.y + XYZ_TO_SRGB[2] * xyz.z) * dLambda;
+	rgb.y = MAX_LUMINOUS_EFFICACY * (XYZ_TO_SRGB[3] * xyz.x + XYZ_TO_SRGB[4] * xyz.y + XYZ_TO_SRGB[5] * xyz.z) * dLambda;
+	rgb.z = MAX_LUMINOUS_EFFICACY * (XYZ_TO_SRGB[6] * xyz.x + XYZ_TO_SRGB[7] * xyz.y + XYZ_TO_SRGB[8] * xyz.z) * dLambda;
 
-	return SRGB;
+	return rgb;
 }

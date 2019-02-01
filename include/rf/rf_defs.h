@@ -11,12 +11,13 @@
 #define UI_MAXSTACKOBJECT 256
 
 #define KEY_HIT(KeyState) ((KeyState >> 0x1) & 1)
-#define KEY_UP(KeyState) ((KeyState >> 0x2) & 1)
-#define KEY_DOWN(KeyState) ((KeyState >> 0x3) & 1)
+#define KEY_RELEASED(KeyState) ((KeyState >> 0x2) & 1)
+#define KEY_PRESSED(KeyState) ((KeyState >> 0x3) & 1)
 #define MOUSE_HIT(MouseState) KEY_HIT(MouseState)
-#define MOUSE_UP(MouseState) KEY_UP(MouseState)
-#define MOUSE_DOWN(MouseState) KEY_DOWN(MouseState)
+#define MOUSE_RELEASED(MouseState) KEY_RELEASED(MouseState)
+#define MOUSE_PRESSED(MouseState) KEY_PRESSED(MouseState)
 
+#include <memory>
 /// Memory pool and arena helper functions
 namespace rf {
 struct memory_arena
@@ -41,20 +42,30 @@ inline void ClearArena(memory_arena *Arena)
     Arena->Size = 0;
 }
 
-inline void *_PushArenaData(memory_arena *Arena, uint64 Size)
+inline void *_PushArenaData(memory_arena *Arena, uint64 ElemSize, uint64 ElemCount, uint32 Align)
 {
-    Assert(Arena->Size + Size <= Arena->Capacity);
-    void *MemoryPtr = Arena->BasePtr + Arena->Size;
-    Arena->Size += Size;
-    //printf("Current ArenaSize is %llu [max %llu]\n", Arena->Size, Arena->Capacity);
+	void *ArenaSlot = (void*)(Arena->BasePtr + Arena->Size);
+	uint64 Remaining = Arena->Capacity - Arena->Size;
 
-    return (void*)MemoryPtr;
+	void *AlignedSlot = std::align(Align, ElemSize, ArenaSlot, Remaining);
+	if (AlignedSlot)
+	{
+		Arena->Size = (uint64)((uint8*)AlignedSlot - Arena->BasePtr) + ElemSize * ElemCount;
+		return AlignedSlot;
+	}
+	printf("ALLOC ERROR : arena <size %llu, cap %llu>, alloc <size %llu, count %llu, align $%lu>\n",
+		Arena->Size, Arena->Capacity, ElemSize, ElemCount, Align);
+	return nullptr;
 }
 }
 
 #define POOL_OFFSET(Pool, Structure) ((uint8*)(Pool) + sizeof(Structure))
-#define PushArenaStruct(Arena, Struct) (Struct*)rf::_PushArenaData((Arena), sizeof(Struct))
-#define PushArenaData(Arena, Size) rf::_PushArenaData((Arena), (Size))
+
+template<typename T>
+T* Alloc(rf::memory_arena *Arena, uint32 Count = 1, uint32 Align = 1)
+{
+	return (T*)rf::_PushArenaData(Arena, sizeof(T), Count, Align);
+}
 
 namespace rf {
 struct context;

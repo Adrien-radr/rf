@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include <algorithm>
 #include "linmath.h"
 
 #define RF_MAJOR 0
@@ -15,6 +16,7 @@
 #   define RF_WIN32 1
 #   define NOMINMAX 1
 #   include <Windows.h>
+#   define ALIGNED(...) __declspec(align(__VA_ARGS__))
 #ifdef LIBEXPORT
 #   define DLLEXPORT extern "C" __declspec(dllexport)
 #else
@@ -24,6 +26,7 @@
 #   define RF_UNIX 1
 #   define DLLEXPORT extern "C"
 #   include <stddef.h>
+#   define ALIGNED(...) __attribute__((aligned(__VA_ARGS__)))
 #else
 #   error "Unknown OS. Only Windows & Linux supported for now."
 #endif
@@ -56,9 +59,9 @@ typedef char path[MAX_PATH];
 #endif
 
 #ifdef DEBUG
-#define D(x) x
+#define D_ONLY(x) x
 #else
-#define D(x)
+#define D_ONLY(x)
 #endif
 
 #define KB (1024llu)

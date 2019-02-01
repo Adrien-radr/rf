@@ -163,6 +163,7 @@ void            RenderMesh(mesh *Mesh, uint32 GLDrawType = GL_TRIANGLES);
 
 mesh            MakeUnitCube(bool MakeAdditionalAttribs = true);
 mesh            Make2DQuad(context *Context, vec2f Start, vec2f End, int Subdivisions = 0);
+mesh			Make2DCircle(context *Context, vec2f Center, real32 Radius, int Segments = 32);
 mesh            Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 TextureRepeatCount, bool Dynamic = false);
 mesh            MakeUnitSphere(bool MakeAdditionalAttribs = true, real32 TexScale = 1.f);
 
@@ -182,6 +183,7 @@ uint32          BuildShaderFromSource(context *Context, char const *VSrc, char c
 void            SendVec2(uint32 Loc, vec2f value);
 void            SendVec3(uint32 Loc, vec3f value);
 void            SendVec4(uint32 Loc, vec4f value);
+void			SendMat3(uint32 Loc, mat3f value);
 void            SendMat4(uint32 Loc, mat4f value);
 void            SendInt(uint32 Loc, int value);
 void            SendFloat(uint32 Loc, real32 value);

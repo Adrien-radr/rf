@@ -90,21 +90,22 @@ namespace log {
 			6
 		};
 
-        char LocalBuf[256];
+        static char LocalBuf[1024];
+		static char Str[2048];
+
         va_list args;
         va_start(args, Fmt);
-        vsnprintf(LocalBuf, 256, Fmt, args);
+        vsnprintf(LocalBuf, 1024, Fmt, args);
         va_end(args);
 
-        char Str[512];
         int CharCount = 0;
 
         // STD Output
 #if RF_WIN32
 		if (LogLevel == LOG_DEBUG || LogLevel == LOG_ERROR)
-			CharCount = snprintf(Str, 512, "<%s:%d> %s", File, Line, LocalBuf);
+			CharCount = snprintf(Str, 2048, "<%s:%d> %s", File, Line, LocalBuf);
 		else
-			CharCount = snprintf(Str, 512, "%s", LocalBuf);
+			CharCount = snprintf(Str, 2048, "%s", LocalBuf);
 
 		SetConsoleTextAttribute(hConsole, LogLevelColor[LogLevel]);
 		printf("%s ", LogLevelStr[LogLevel]);
@@ -112,9 +113,9 @@ namespace log {
 		printf("%s\n", Str);
 #else
 		if (LogLevel == LOG_DEBUG || LogLevel == LOG_ERROR)
-			CharCount = snprintf(Str, 512, "%s <%s:%d> %s", LogLevelStr[LogLevel], File, Line, LocalBuf);
+			CharCount = snprintf(Str, 2048, "%s <%s:%d> %s", LogLevelStr[LogLevel], File, Line, LocalBuf);
 		else
-			CharCount = snprintf(Str, 512, "%s %s", LogLevelStr[LogLevel], LocalBuf);
+			CharCount = snprintf(Str, 2048, "%s %s", LogLevelStr[LogLevel], LocalBuf);
 		printf("%s\n", Str);
 #endif
 

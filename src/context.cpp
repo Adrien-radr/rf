@@ -157,9 +157,15 @@ static bool WindowResized(context *Context)
 
 context *Init(context_descriptor const *Desc)
 {
+	if (!Desc)
+	{
+		printf("No Context Descriptor given for context init. Abort.\n");
+		exit(1);
+	}
+
 	bool GLFWValid = false, GLEWValid = false;//, SoundValid = false;
 
-	context *Context = (context*)PushArenaData(Desc->SessionArena, sizeof(context));
+	context *Context = Alloc<context>(Desc->SessionArena);
 	Context->SessionArena = Desc->SessionArena;
 	Context->ScratchArena = Desc->ScratchArena;
 
@@ -184,6 +190,9 @@ context *Init(context_descriptor const *Desc)
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 #endif
+		// TODO - AA in config
+		int AAlvl = std::max(0, std::min(8, Desc->AALevel));
+		glfwWindowHint(GLFW_SAMPLES, AAlvl);
 
 		Context->Window = glfwCreateWindow(Desc->WindowWidth, Desc->WindowHeight, Desc->ExecutableName, NULL, NULL);
 		if (Context->Window)
@@ -224,6 +233,14 @@ context *Init(context_descriptor const *Desc)
 				glGetIntegerv(GL_MAX_PATCH_VERTICES, &MaxTessPatchVertices);
 				LogInfo("GL Max Tesselation Patch Vertices : %d", MaxTessPatchVertices);
 
+				int MaxVertexUniforms = 0, MaxFragmentUniforms = 0, MaxGeomUniforms = 0, MaxUBOSize = 0;
+				glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &MaxVertexUniforms);
+				glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &MaxFragmentUniforms);
+				glGetIntegerv(GL_MAX_GEOMETRY_UNIFORM_COMPONENTS, &MaxGeomUniforms);
+				glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &MaxUBOSize);
+				LogInfo("GL Max Uniforms : [V] %d [F] %d [G] %d", MaxVertexUniforms, MaxFragmentUniforms, MaxGeomUniforms);
+				LogInfo("GL Max UBO Block Size : %d", MaxUBOSize);
+
 				ResizeWidth = Desc->WindowWidth;
 				ResizeHeight = Desc->WindowHeight;
 				Context->WindowWidth = Desc->WindowWidth;
@@ -259,17 +276,17 @@ context *Init(context_descriptor const *Desc)
 				glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 				vec3i texColor = vec3i(255, 255, 255);
-				Context->RenderResources.DefaultDiffuseTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
+				Context->RenderResources.DefaultDiffuseTexture = Alloc<uint32>(Context->SessionArena);
 				*Context->RenderResources.DefaultDiffuseTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
 					GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
 				texColor = vec3i(127, 127, 255);
-				Context->RenderResources.DefaultNormalTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
+				Context->RenderResources.DefaultNormalTexture = Alloc<uint32>(Context->SessionArena);
 				*Context->RenderResources.DefaultNormalTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
 					GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
 				texColor = vec3i(0, 0, 0);
-				Context->RenderResources.DefaultEmissiveTexture = (uint32*)PushArenaStruct(Context->SessionArena, uint32);
+				Context->RenderResources.DefaultEmissiveTexture = Alloc<uint32>(Context->SessionArena);
 				*Context->RenderResources.DefaultEmissiveTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
 					GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 			}
@@ -338,7 +355,7 @@ void GetFrameInput(context *Context, input *Input)
 	Input->MouseLeft = BuildMouseState(GLFW_MOUSE_BUTTON_LEFT);
 	Input->MouseRight = BuildMouseState(GLFW_MOUSE_BUTTON_RIGHT);
 
-	Input->dTimeFixed = 0.1f; // 100FPS
+	Input->dTimeFixed = 0.01f; // 100FPS
 
 	if (WindowResized(Context))
 	{
@@ -370,11 +387,6 @@ void Destroy(context *Context)
 path const &GetExePath(context *Context)
 {
 	return Context->RenderResources.ExecutablePath;
-}
-
-void *AllocScratch(context *Context, size_t Size)
-{
-	return PushArenaData(Context->ScratchArena, Size);
 }
 
 void SetCursor(context *Context, cursor_type CursorType)

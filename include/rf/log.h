@@ -30,7 +30,7 @@ namespace log
 } while(0)
 
 #define LogDebug(...) do {\
-    D(rf::log::_Msg(rf::log::LOG_DEBUG, __FILE__, __LINE__, ##__VA_ARGS__);)\
+    D_ONLY(rf::log::_Msg(rf::log::LOG_DEBUG, __FILE__, __LINE__, ##__VA_ARGS__);)\
 } while(0)
 
 #endif

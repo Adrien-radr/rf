@@ -197,9 +197,9 @@ void            FramebufferSetAttachmentCount(frame_buffer *FB, int Count);
 
 /// Display Text Utilities
 real32          GetDisplayTextWidth(char const *Text, font *Font, real32 Scale);
-void            FillDisplayTextInterleaved(char const *Text, uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
+void            FillDisplayTextInterleaved(char const *Text, int32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
                     real32 *VertData, uint16 *Indices, real32 Scale = 1.0f);
-void            FillDisplayTextInterleavedUTF8(char const *Text , uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
+void            FillDisplayTextInterleavedUTF8(char const *Text , int32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
                     real32 *VertData, uint16 *IdxData, real32 Scale = 1.0f);
 }
 #endif

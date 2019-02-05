@@ -898,7 +898,7 @@ static void FillCharInterleaved(real32 *VertData, uint16 *IdxData, uint32 i, uin
     *X += (int)ceil(Glyph.AdvX);
 }
 
-void FillDisplayTextInterleaved(char const *Text, uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
+void FillDisplayTextInterleaved(char const *Text, int32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
                                 real32 *VertData, uint16 *IdxData, real32 Scale)
 {
     // Precalculate if the text is larger than the authorized width
@@ -907,6 +907,7 @@ void FillDisplayTextInterleaved(char const *Text, uint32 TextLength, font *Font,
     if(TextWidth >= MaxPixelWidth)
     { // remove necessary charcount + 1
         TextLength -= (int)ceil((TextWidth - MaxPixelWidth) / Font->MaxGlyphWidth) + 1;
+		TextLength = Max(0, TextLength);
         AdditionalLen = 2; // 2 dots
     }
 
@@ -938,7 +939,7 @@ void FillDisplayTextInterleaved(char const *Text, uint32 TextLength, font *Font,
     }
 
 }
-void FillDisplayTextInterleavedUTF8(char const *Text, uint32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
+void FillDisplayTextInterleavedUTF8(char const *Text, int32 TextLength, font *Font, vec3i Pos, int MaxPixelWidth,
                                     real32 *VertData, uint16 *IdxData, real32 Scale)
 {
     uint32 VertexCount = TextLength * 4;

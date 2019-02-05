@@ -1284,6 +1284,18 @@ public:
 		return R;
 	}
 
+	static mat4<T> LookAtPrecise(const vec3<T> &cam_pos, const vec3<T> fwd, const vec3<T> right, const vec3<T> up)
+	{
+		mat4<T> Tr = mat4<T>::Translation(-cam_pos);
+		mat4<T> R;
+		R[0][0] = right[0];    R[1][0] = right[1];    R[2][0] = right[2];
+		R[0][1] = up[0];    R[1][1] = up[1];    R[2][1] = up[2];
+		R[0][2] = -fwd[0];   R[1][2] = -fwd[1];   R[2][2] = -fwd[2];
+
+		R *= Tr;
+		return R;
+	}
+
 #if 0
 	std::string ToString() const
 	{

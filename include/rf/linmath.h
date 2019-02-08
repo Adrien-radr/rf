@@ -213,6 +213,8 @@ vec2<T> Normalize(const vec2<T> &v)
 typedef vec2<float> vec2f;
 typedef vec2<int> vec2i;
 
+template<typename T> class vec4;
+
 template<typename T>
 class vec3
 {
@@ -231,6 +233,14 @@ public:
 		x = (T) v.x;
 		y = (T) v.y;
 		z = (T) v.z;
+	}
+
+	template<typename T>
+	inline vec3(const vec4<T> &v)
+	{
+		x = v.x;
+		y = v.y;
+		z = v.z;
 	}
 
 	inline vec3<T> operator+(const vec3<T> &v) const

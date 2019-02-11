@@ -35,14 +35,32 @@
 #define Max(a,b) ((a) >= (b) ? (a) : (b))
 #endif
 #endif
-#ifndef Clamp
-#define Clamp(v,a,b) (Max((a), Min((b), (v))))
-#endif
+
+inline float Clamp(float Value, float A, float B)
+{
+	return Max(A, Min(B, Value));
+}
 
 template<typename T>
-inline T Mix(T A, T B, float Interp)
+inline T Lerp(const T &A, const T &B, float t)
 {
-    return A + (B - A) * Interp;
+	return T(A * (1.0f - t) + B * t);
+}
+
+template<typename T>
+inline T Smoothstep(const T &A, const T &B, float t)
+{
+	T tVal = T(t);
+	T x = Clamp((tVal - A) / (B - A), T(0), T(1));
+	return x * x * (T(3) - T(2) * x);
+}
+
+template<typename T>
+inline T Smootherstep(const T &A, const T &B, float t)
+{
+	T tVal = T(t);
+	T x = Clamp((tVal - A) / (B - A), T(0), T(1));
+	return x * x * x * (x * (x * T(6) - T(15)) + T(10));
 }
 
 template<typename T>
@@ -385,10 +403,9 @@ inline vec3<T> Normalize(const vec3<T> &v)
 }
 
 template<typename T>
-inline vec3<T> Lerp(const vec3<T> &A, const vec3<T> &B, float t)
+inline vec3<T> Clamp(const vec3<T> &Value, const vec3<T> &A, const vec3<T> &B)
 {
-    vec3<T> C = (B - A) * t;
-    return vec3<T>(A + C);
+	return vec3<T>(Clamp(Value.x, A.x, B.x), Clamp(Value.y, A.y, B.y), Clamp(Value.z, A.z, B.z));
 }
 
 template<typename T>
@@ -616,6 +633,12 @@ inline vec4<T> Normalize(const vec4<T> &v)
 		return v * k;
 	}
 	return vec4<T>(0);
+}
+
+template<typename T>
+inline vec4<T> Clamp(const vec4<T> &Value, const vec4<T> &A, const vec4<T> &B)
+{
+	return vec4<T>(Clamp(Value.x, A.x, B.x), Clamp(Value.y, A.y, B.y), Clamp(Value.z, A.z, B.z), Clamp(Value.w, A.w, B.w));
 }
 
 template<typename T>

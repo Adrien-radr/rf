@@ -915,7 +915,7 @@ void FillDisplayTextInterleaved(char const *Text, int32 TextLength, font *Font, 
     uint32 IndexCount = (TextLength + AdditionalLen) * 6;
 
     int X = 0, Y = 0;
-    for(uint32 i = 0; i < TextLength; ++i)
+    for(int32 i = 0; i < TextLength; ++i)
     {
         uint8 AsciiIdx = Text[i] - Font->Char0;
 
@@ -948,7 +948,7 @@ void FillDisplayTextInterleavedUTF8(char const *Text, int32 TextLength, font *Fo
     int X = 0, Y = 0;
     size_t TextIdx = 0;
     real32 TextWidth = 0.f;
-    for(uint32 i = 0; i < TextLength; ++i)
+    for(int32 i = 0; i < TextLength; ++i)
     {
         size_t CharAdvance;
         uint16 UTFIdx = UTF8CharToInt(&Text[TextIdx], &CharAdvance) - Font->Char0;

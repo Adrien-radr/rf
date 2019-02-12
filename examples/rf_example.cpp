@@ -135,7 +135,7 @@ int main()
 		rf::ui::BeginFrame(&Input);
 
 		// termination test
-		if (KEY_DOWN(Input.Keys[KEY_ESCAPE]))
+		if (KEY_RELEASED(Input.Keys[KEY_ESCAPE]))
 		{
 			Context->IsRunning = false;
 		}

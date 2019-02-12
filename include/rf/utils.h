@@ -22,7 +22,7 @@ void	GetSystemInfo(system_info &SysInfo);
 char	*GetClipboardContent();
 void	SetClipboardContent(char *Content);
 
-/// Concatenate 2 strings so that Dst = Str1 + Str2 (in std::string terms)
+/// Concatenate 2 strings so that Dst = Str1 + Str2
 void    ConcatStrings(path Dst, path const Str1, path const Str2);
 
 /// Fills the given path with the absolute path to the running executable
@@ -149,20 +149,5 @@ inline col4f JSON_Get(cJSON *Root, char const *ValueName, col4f const &DefaultVa
 
 	return DefaultValue;
 }
-
-template<>
-inline std::string JSON_Get(cJSON *Root, char const *ValueName, std::string const &DefaultValue)
-{
-	if (Root)
-	{
-		cJSON *Obj = cJSON_GetObjectItem(Root, ValueName);
-		std::string Ret;
-		if (Obj)
-			return std::string(Obj->valuestring);
-	}
-
-	return DefaultValue;
-}
-
 }
 #endif

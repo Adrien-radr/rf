@@ -65,7 +65,9 @@ void ResourceStore(render_resources *RenderResources, render_resource_type Type,
     if(Store)
     {
         LogDebug("Storing %s [%llu]", Filename, (Type == RESOURCE_IMAGE || Type == RESOURCE_TEXTURE) ? (uint64)*((uint32*)Resource) : (uint64)Resource);
-        Store->Keys.push_back(std::string(Filename));
+		//path key;
+		//strncpy(key, Filename, MAX_PATH);
+		Store->Keys.push_back(std::string(Filename));
         Store->Values.push_back(Resource);
     }
 }

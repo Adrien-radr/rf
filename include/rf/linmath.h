@@ -66,7 +66,7 @@ inline T Smootherstep(const T &A, const T &B, float t)
 template<typename T>
 T Inf()
 {
-    return std::numeric_limits<T>::infinity();
+	return std::numeric_limits<T>::infinity();
 }
 
 inline float HFOVtoVFOV(float Aspect, float HFOV_deg)
@@ -91,8 +91,8 @@ public:
 	template<typename T2>
 	vec2(const vec2<T2> &v)
 	{
-		x = (T) v.x;
-		y = (T) v.y;
+		x = (T)v.x;
+		y = (T)v.y;
 	}
 
 	vec2<T> operator+(const vec2<T> &v) const
@@ -248,9 +248,9 @@ public:
 	template<typename T2>
 	inline vec3(const vec3<T2> &v)
 	{
-		x = (T) v.x;
-		y = (T) v.y;
-		z = (T) v.z;
+		x = (T)v.x;
+		y = (T)v.y;
+		z = (T)v.z;
 	}
 
 	template<typename T>
@@ -435,28 +435,28 @@ inline float Luminance(const vec3f &rgb)
 template<typename T>
 class frame
 {
-    // NOTE - from [Frisvad2012]
-    // TODO - This is for Z up, make it for Y up as well
-    explicit frame(vec3<T> N)
-    {
-        vz = Normalize(N);
-        if(vz.z < -0.9999999)
-        {
-            vx = vec3<T>(0, -1, 0);
-            vy = vec3<T>(-1, 0, 0);
-        }
-        else
-        {
-            T a = T(1) / (T(1) + vz.z);
-            T b = -vz.x * vz.y * a;
-            vx = vec3<T>(T(1) - vz.x * vz.x * a, b, -vz.x);
-            vy = vec3<T>(b, T(1) - vz.y * vz.y * a, -vz.y);
-        }
-    }
+	// NOTE - from [Frisvad2012]
+	// TODO - This is for Z up, make it for Y up as well
+	explicit frame(vec3<T> N)
+	{
+		vz = Normalize(N);
+		if (vz.z < -0.9999999)
+		{
+			vx = vec3<T>(0, -1, 0);
+			vy = vec3<T>(-1, 0, 0);
+		}
+		else
+		{
+			T a = T(1) / (T(1) + vz.z);
+			T b = -vz.x * vz.y * a;
+			vx = vec3<T>(T(1) - vz.x * vz.x * a, b, -vz.x);
+			vy = vec3<T>(b, T(1) - vz.y * vz.y * a, -vz.y);
+		}
+	}
 
-    vec3<T> vx;
-    vec3<T> vy;
-    vec3<T> vz;
+	vec3<T> vx;
+	vec3<T> vy;
+	vec3<T> vz;
 };
 template<typename T>
 class vec4
@@ -472,10 +472,10 @@ public:
 	template<typename T2>
 	vec4(const vec4<T2> &v)
 	{
-		x = (T) v.x;
-		y = (T) v.y;
-		z = (T) v.z;
-		w = (T) v.w;
+		x = (T)v.x;
+		y = (T)v.y;
+		z = (T)v.z;
+		w = (T)v.w;
 	}
 
 	vec4(const vec3<T> &v)
@@ -483,7 +483,7 @@ public:
 		x = v.x;
 		y = v.y;
 		z = v.z;
-		w = (T) 1;
+		w = (T)1;
 	}
 
 	vec4<T> operator+(const vec4<T> &v) const
@@ -583,15 +583,10 @@ public:
 		return *((&x) + index);
 	}
 
-#if 0
-	std::string ToString() const
+	void ToString(char *output, int maxChar) const
 	{
-	    std::stringstream ss;
-	    ss << x << "," << y << "," << z << "," << w;
-
-	    return ss.str();
+		snprintf(output, maxChar, "%f, %f, %f, %f", x, y, z, w);
 	}
-#endif
 
 	T x;
 	T y;
@@ -645,7 +640,7 @@ template<typename T>
 class col4 : public vec4<T>
 {
 public:
-    col4() : col4(0,0,0,0) {}
+	col4() : col4(0, 0, 0, 0) {}
 	col4(T r, T g, T b, T a) : vec4<T>(r, g, b, a) {}
 	col4(vec4<T> v) : vec4<T>(v) {}
 	const T &r() const { return this->x; }
@@ -668,10 +663,10 @@ typedef col4<float> col4f;
 template<typename T>
 inline T BilinearLookup(const float *floatTexture, const vec2f &coord, const vec2i &texSize)
 {
-	const vec2i coordI((int) floorf(texSize.y * coord.x), (int) floorf(texSize.y * coord.y));
+	const vec2i coordI((int)floorf(texSize.y * coord.x), (int)floorf(texSize.y * coord.y));
 	const vec2f offset(coord.x - coordI.x, coord.y - coordI.y);
 
-	const T *texture = (T*) floatTexture;
+	const T *texture = (T*)floatTexture;
 
 	T res = texture[coordI.y * texSize.x + coordI.x];
 	if (coordI.x < (texSize.x - 1) && coordI.y < (texSize.y - 1))
@@ -855,16 +850,16 @@ public:
 	{
 		T c = std::cos(rot);
 		T s = std::sin(rot);
-		return mat3<T>(	   c,	-s, 0.0f,
-						   s,	 c, 0.0f,
-						0.0f, 0.0f, 1.0f);
+		return mat3<T>(c, -s, 0.0f,
+			s, c, 0.0f,
+			0.0f, 0.0f, 1.0f);
 	}
 
 	mat3<T> Scale(const vec2<T> &scale)
 	{
 		return mat3<T>(scale.x, 0, 0, 0, scale.y, 0, 0, 0, 1);
 	}
-	
+
 	void FromTRS(const vec2<T> &pos, T rot, const vec2<T> &scale)
 	{
 		*this = mat3<T>::Scale(scale);
@@ -889,7 +884,7 @@ public:
 		R[0][2] = +(M[0][1] * M[1][2] - M[1][1] * M[0][2]) * oneOverDet;
 		R[1][2] = -(M[0][0] * M[1][2] - M[1][0] * M[0][2]) * oneOverDet;
 		R[2][2] = +(M[0][0] * M[1][1] - M[1][0] * M[0][1]) * oneOverDet;
-        return R;
+		return R;
 	}
 
 	vec3<T> M[3];
@@ -930,13 +925,13 @@ public:
 		(*this) = v;
 	}
 
-    mat4(const mat3<T> &A)
-    {
-        M[0] = vec4<T>(A.M[0].x, A.M[0].y, A.M[0].z, 0.f);
-        M[1] = vec4<T>(A.M[1].x, A.M[1].y, A.M[1].z, 0.f);
-        M[2] = vec4<T>(A.M[2].x, A.M[2].y, A.M[2].z, 0.f);
-        M[3] = vec4<T>(0.f, 0.f, 0.f, 1.f);
-    }
+	mat4(const mat3<T> &A)
+	{
+		M[0] = vec4<T>(A.M[0].x, A.M[0].y, A.M[0].z, 0.f);
+		M[1] = vec4<T>(A.M[1].x, A.M[1].y, A.M[1].z, 0.f);
+		M[2] = vec4<T>(A.M[2].x, A.M[2].y, A.M[2].z, 0.f);
+		M[3] = vec4<T>(0.f, 0.f, 0.f, 1.f);
+	}
 
 	void Identity()
 	{
@@ -1078,10 +1073,10 @@ public:
 		return r;
 	}
 
-    void SetTranslation(vec3<T> xyz)
-    {
+	void SetTranslation(vec3<T> xyz)
+	{
 		M[3] = vec4<T>(xyz.x, xyz.y, xyz.z, 1.f);
-    }
+	}
 
 	static mat4<T> Translation(vec3<T> xyz)
 	{
@@ -1090,12 +1085,12 @@ public:
 		return r;
 	}
 
-    void SetScale(vec3<T> xyz)
-    {
+	void SetScale(vec3<T> xyz)
+	{
 		M[0].x = xyz.x;
 		M[1].y = xyz.y;
 		M[2].z = xyz.z;
-    }
+	}
 
 	static mat4<T> Scale(vec3<T> xyz)
 	{
@@ -1122,13 +1117,13 @@ public:
 		M[3] = vec4<T>(pos.x, pos.y, pos.z, 1.f);
 	}
 
-    void FromAxisAngle(const vec3<T> &Rot)
-    {
-        this->Identity();
+	void FromAxisAngle(const vec3<T> &Rot)
+	{
+		this->Identity();
 		*this = this->RotateX(Rot.x);
 		*this = this->RotateY(Rot.y);
 		*this = this->RotateZ(Rot.z);
-    }
+	}
 
 	mat4<T> Rotate(const vec3<T> &axis, float angle)
 	{
@@ -1157,12 +1152,12 @@ public:
 	{
 		float s = sinf(angle);
 		float c = cosf(angle);
-        mat4<T> R(
-                1, 0, 0, 0,
-                0, c, -s, 0,
-                0, s, c, 0,
-                0, 0, 0, 1
-                );
+		mat4<T> R(
+			1, 0, 0, 0,
+			0, c, -s, 0,
+			0, s, c, 0,
+			0, 0, 0, 1
+		);
 		return R * (*this);
 	}
 
@@ -1170,12 +1165,12 @@ public:
 	{
 		float s = sinf(angle);
 		float c = cosf(angle);
-        mat4<T> R(
-                c, 0, s, 0,
-                0, 1, 0, 0,
-                -s, 0, c, 0,
-                0, 0, 0, 1
-                );
+		mat4<T> R(
+			c, 0, s, 0,
+			0, 1, 0, 0,
+			-s, 0, c, 0,
+			0, 0, 0, 1
+		);
 		return R * (*this);
 	}
 
@@ -1183,12 +1178,12 @@ public:
 	{
 		float s = sinf(angle);
 		float c = cosf(angle);
-        mat4<T> R(
-                c, -s, 0, 0,
-                s, c, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1
-                );
+		mat4<T> R(
+			c, -s, 0, 0,
+			s, c, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1
+		);
 		return R * (*this);
 	}
 
@@ -1329,18 +1324,14 @@ public:
 		return R;
 	}
 
-#if 0
-	std::string ToString() const
+	void ToString(char *output, int maxChar) const
 	{
-	    std::stringstream ss;
-	    ss << M[0][0] << "," << M[0][1] << "," << M[0][2] << "," << M[0][3] << std::endl
-	       << M[1][0] << "," << M[1][1] << "," << M[1][2] << "," << M[1][3] << std::endl
-	       << M[2][0] << "," << M[2][1] << "," << M[2][2] << "," << M[2][3] << std::endl
-	       << M[3][0] << "," << M[3][1] << "," << M[3][2] << "," << M[3][3];
-
-	    return ss.str();
+		snprintf(output, maxChar, "%f, %f, %f, %f\n%f, %f, %f, %f\n%f, %f, %f, %f\n%f, %f, %f, %f",
+			M[0][0], M[0][1], M[0][2], M[0][3],
+			M[1][0], M[1][1], M[1][2], M[1][3],
+			M[2][0], M[2][1], M[2][2], M[2][3],
+			M[3][0], M[3][1], M[3][2], M[3][3]);
 	}
-#endif
 
 	vec4<T> M[4];
 };
@@ -1351,47 +1342,47 @@ typedef mat4<int> mat4i;
 template<typename T>
 inline mat3<T> mat3FromMat4(const mat4<T> &A)
 {
-    mat3<T> m;
-    m.M[0] = vec3<T>(A.M[0].x, A.M[0].y, A.M[0].z);
-    m.M[1] = vec3<T>(A.M[1].x, A.M[1].y, A.M[1].z);
-    m.M[2] = vec3<T>(A.M[2].x, A.M[2].y, A.M[2].z);
-    return m;
+	mat3<T> m;
+	m.M[0] = vec3<T>(A.M[0].x, A.M[0].y, A.M[0].z);
+	m.M[1] = vec3<T>(A.M[1].x, A.M[1].y, A.M[1].z);
+	m.M[2] = vec3<T>(A.M[2].x, A.M[2].y, A.M[2].z);
+	return m;
 }
 
 class complex {
 public:
-    complex() : r(0.f), i(0.f) {}
-    complex(float a, float b) : r(a), i(b) {}
+	complex() : r(0.f), i(0.f) {}
+	complex(float a, float b) : r(a), i(b) {}
 
-    complex operator*(const complex &c) const
-    {
-        return complex(this->r*c.r - this->i*c.i, this->r*c.i + this->i*c.r);
-    }
-    complex operator+(const complex& c) const
-    {
-        return complex(this->r + c.r, this->i + c.i);
-    }
-    complex operator-(const complex& c) const
-    {
-        return complex(this->r - c.r, this->i - c.i);
-    }
-    complex operator*(const float c) const
-    {
-        return complex(this->r*c, this->i*c);
-    }
-    complex& operator=(const complex& c)
-    {
-        this->r = c.r;
-        this->i = c.i;
-        return *this;
-    }
+	complex operator*(const complex &c) const
+	{
+		return complex(this->r*c.r - this->i*c.i, this->r*c.i + this->i*c.r);
+	}
+	complex operator+(const complex& c) const
+	{
+		return complex(this->r + c.r, this->i + c.i);
+	}
+	complex operator-(const complex& c) const
+	{
+		return complex(this->r - c.r, this->i - c.i);
+	}
+	complex operator*(const float c) const
+	{
+		return complex(this->r*c, this->i*c);
+	}
+	complex& operator=(const complex& c)
+	{
+		this->r = c.r;
+		this->i = c.i;
+		return *this;
+	}
 
-    float r, i;
+	float r, i;
 };
 
 inline complex Conjugate(const complex &c)
 {
-    return complex(c.r, -c.i);
+	return complex(c.r, -c.i);
 }
 
 /*
@@ -1597,53 +1588,53 @@ int rectangle_equal_size(const rectangle a, const rectangle b) {
 */
 struct quaternion
 {
-    float x, y, z, w;
+	float x, y, z, w;
 };
 
 inline vec3f QuaternionToEulerAngle(quaternion const &Q)
 {
-    vec3f R;
-    float sinRoll = 2.f * (Q.w * Q.x + Q.y * Q.z);
-    float cosRoll = 1.f - 2.f * (Q.x * Q.x + Q.y * Q.y);
-    R.y = std::atan2(sinRoll, cosRoll);
+	vec3f R;
+	float sinRoll = 2.f * (Q.w * Q.x + Q.y * Q.z);
+	float cosRoll = 1.f - 2.f * (Q.x * Q.x + Q.y * Q.y);
+	R.y = std::atan2(sinRoll, cosRoll);
 
-    float sinPitch = 2.f * (Q.w * Q.y - Q.z * Q.x);
-    if(std::abs(sinPitch) >= 1.f)
-        R.x = std::copysign(M_PI_OVER_TWO, sinPitch);
-    else
-        R.x = std::asin(sinPitch);
+	float sinPitch = 2.f * (Q.w * Q.y - Q.z * Q.x);
+	if (std::abs(sinPitch) >= 1.f)
+		R.x = std::copysign(M_PI_OVER_TWO, sinPitch);
+	else
+		R.x = std::asin(sinPitch);
 
-    float sinYaw = 2.f * (Q.w * Q.z - Q.x * Q.y);
-    float cosYaw = 1.f - 2.f * (Q.y * Q.y + Q.z * Q.z);
-    R.z = std::atan2(sinYaw, cosYaw);
-    return R;
+	float sinYaw = 2.f * (Q.w * Q.z - Q.x * Q.y);
+	float cosYaw = 1.f - 2.f * (Q.y * Q.y + Q.z * Q.z);
+	R.z = std::atan2(sinYaw, cosYaw);
+	return R;
 }
 
 // {theta, phi} -> [x, y, z]
 inline vec3f SphericalToCartesian(float Theta, float Phi)
 {
-    float SinTheta = sinf(Theta);
-    return vec3f(SinTheta * cosf(Phi), cosf(Theta), SinTheta * sinf(Phi));
+	float SinTheta = sinf(Theta);
+	return vec3f(SinTheta * cosf(Phi), cosf(Theta), SinTheta * sinf(Phi));
 }
 
 // [x, y, z] -> {theta, phi}
 inline vec2f CartesianToSpherical(vec3f const &V)
 {
-    return vec2f(acosf(V.y/sqrtf(Square(V.x) + Square(V.y) + Square(V.z))), atan2f(V.z, V.x));
+	return vec2f(acosf(V.y / sqrtf(Square(V.x) + Square(V.y) + Square(V.z))), atan2f(V.z, V.x));
 }
 
 // Creates a Frame around the normal N, returning its tangent and bitangent as out-params
 inline void BasisFrisvad(vec3f const &N, vec3f &T, vec3f &BT)
 {
-    if(N.y < -0.9999999f) // Handle the singularity
-    {
-        T = vec3f(-1.0f, 0.0f, 0.0f);
-        BT = vec3f(0.0f, 0.0f, -1.0f);
-        return;
-    }
-    float a = 1.0f/(1.0f + N.y);
-    float b = -N.x*N.z*a;
-    T = vec3f(1.0f - N.x*N.x*a, -N.x, b);
-    BT = vec3f(b, -N.z, 1.0f - N.z*N.z*a);
+	if (N.y < -0.9999999f) // Handle the singularity
+	{
+		T = vec3f(-1.0f, 0.0f, 0.0f);
+		BT = vec3f(0.0f, 0.0f, -1.0f);
+		return;
+	}
+	float a = 1.0f / (1.0f + N.y);
+	float b = -N.x*N.z*a;
+	T = vec3f(1.0f - N.x*N.x*a, -N.x, b);
+	BT = vec3f(b, -N.z, 1.0f - N.z*N.z*a);
 }
 #endif

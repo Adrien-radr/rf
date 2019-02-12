@@ -5,15 +5,15 @@
 #include "tiny_gltf.h"
 
 namespace rf {
-static int GetAttribIndex(const std::string &AttribName)
+static int GetAttribIndex(const char *AttribName)
 {
-    if(AttribName == "POSITION") return 0;
-    if(AttribName == "TEXCOORD_0") return 1;
-    if(AttribName == "NORMAL") return 2;
-    if(AttribName == "TANGENT") return 3;
+    if(!strcmp(AttribName, "POSITION")) return 0;
+    if(!strcmp(AttribName, "TEXCOORD_0")) return 1;
+    if(!strcmp(AttribName, "NORMAL")) return 2;
+    if(!strcmp(AttribName, "TANGENT")) return 3;
     else
     {
-        printf("Undefined GLTF attrib name %s\n", AttribName.c_str()); 
+        printf("Undefined GLTF attrib name %s\n", AttribName); 
         return -1;
     }
 }
@@ -59,7 +59,6 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
 {
     tinygltf::Model Mdl;
     tinygltf::TinyGLTF Loader;
-    std::string LoadErr;
 
     path Filepath;
     ConcatStrings(Filepath, ctx::GetExePath(Context), Filename);
@@ -67,12 +66,17 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
     using namespace tinygltf;
 
     stbi_set_flip_vertically_on_load(0);
-    bool Ret = Loader.LoadASCIIFromFile(&Mdl, &LoadErr, Filepath);
-    if(!LoadErr.empty())
-    {
-        printf("Error loading glTF model %s : %s\n", Filepath, LoadErr.c_str());
-        return false;
-    }
+	bool Ret;
+	{
+		std::string LoadErr;
+		Ret = Loader.LoadASCIIFromFile(&Mdl, &LoadErr, Filepath);
+
+		if (!LoadErr.empty())
+		{
+			printf("Error loading glTF model %s : %s\n", Filepath, LoadErr.c_str());
+			return false;
+		}
+	}
 
     if(!Ret)
     {
@@ -253,7 +257,7 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
             const Accessor &acc = Mdl.accessors[it.second];
             const BufferView & bv = Mdl.bufferViews[acc.bufferView];
 
-            int AttribIdx = GetAttribIndex(it.first);
+            int AttribIdx = GetAttribIndex(it.first.c_str());
             int AttribStride = GetAttribStride(acc.type);
 
             if(AttribIdx >= 0 && AttribIdx <= 3)
@@ -299,7 +303,7 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
             const Accessor &acc = Mdl.accessors[it.second];
             const BufferView & bv = Mdl.bufferViews[acc.bufferView];
 
-            int AttribIdx = GetAttribIndex(it.first);
+            int AttribIdx = GetAttribIndex(it.first.c_str());
             int AttribStride = GetAttribStride(acc.type);
             size_t AttribSize = acc.count * GetComponentSize(acc.componentType) * AttribStride;
 

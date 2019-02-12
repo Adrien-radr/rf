@@ -44,7 +44,9 @@ typedef long long           int64;
 typedef unsigned long long  uint64;
 
 #define MAX_PATH 260
+#define MAX_STRLEN 512
 typedef char path[MAX_PATH];
+typedef char str[MAX_STRLEN];
 
 #ifdef DEBUG
 #ifndef Assert

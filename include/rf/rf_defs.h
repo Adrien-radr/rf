@@ -20,6 +20,130 @@
 #include <memory>
 /// Memory pool and arena helper functions
 namespace rf {
+
+#define MEM_POOL_CHUNK_LIST_SIZE 256
+#define MEM_POOL_ALIGNMENT 16
+
+struct mem_chunk
+{
+	uint32 Loc;
+	uint32 Size;
+	uint8  *Ptr;
+};
+
+struct mem_pool
+{
+	uint32		Capacity;
+	mem_chunk	MemChunks[MEM_POOL_CHUNK_LIST_SIZE];
+	int32		NumMemChunks;
+	uint8		*Buffer;
+};
+
+inline mem_pool *MemPoolCreate(uint32 PoolCapacity)
+{
+	mem_pool *pool = (mem_pool*)calloc(1, sizeof(mem_pool));
+	pool->Buffer = (uint8*)calloc(1, (size_t)PoolCapacity);
+	pool->MemChunks[0] = mem_chunk{ 0, PoolCapacity };
+	pool->NumMemChunks = 1;
+	return pool;
+}
+
+inline void MemPoolDestroy(mem_pool **Pool)
+{
+	free((*Pool)->Buffer);
+	free(*Pool);
+	*Pool = nullptr;
+}
+
+inline void MemPoolPrintStatus(mem_pool *Pool)
+{
+	for (int i = 0; i < Pool->NumMemChunks; ++i)
+	{
+		printf("free chunk %d : loc %lu size %lu.\n", i, Pool->MemChunks[i].Loc, Pool->MemChunks[i].Size);
+	}
+	if (!Pool->NumMemChunks)
+	{
+		printf("no free chunks\n");
+	}
+}
+
+// Here we remove one free chunk, cut it with enough size for the asked alloc, and insert the remaining 
+// mem chunk in the chunk array, so that no overflow in number of chunks is possible.
+inline void *_MemPoolAlloc(mem_pool *Pool, uint32 Size)
+{
+	Assert(Pool);
+	Assert(Pool->NumMemChunks);
+	uint32 allocSize = AlignUp(Size, MEM_POOL_ALIGNMENT);
+	Assert(Pool->MemChunks[0].Size >= allocSize);
+
+	// find first fitting chunk in list that bounds queried size
+	// start bottom up, getting the first that's large enough
+	int chunkIdx = Pool->NumMemChunks - 1;
+	mem_chunk chunk = Pool->MemChunks[chunkIdx];
+	for (chunkIdx; chunkIdx >= 0; --chunkIdx)
+	{
+		if (Pool->MemChunks[chunkIdx].Size >= allocSize)
+		{
+			// get the chunk from the array, erase it from there
+			chunk = Pool->MemChunks[chunkIdx];
+			Pool->MemChunks[chunkIdx] = mem_chunk{ 0,0,nullptr };
+			Pool->NumMemChunks--;
+
+			// consolidate array
+			for (int i = chunkIdx; i < Pool->NumMemChunks; ++i)
+			{
+				Pool->MemChunks[i] = Pool->MemChunks[i + 1];
+			}
+			break;
+		}
+	}
+
+	if (chunkIdx < 0)
+	{
+		printf("Shouldn't happen !?!\n");
+		return nullptr;
+	}
+
+
+	// cut the one found to fit the asked size and return that chunk. 
+	// align the cut part to next aligned location, and put it back in the available memchunk section
+	void *slot = (void*)(Pool->Buffer + chunk.Loc);
+	void *remainingPart = (void*)(Pool->Buffer + chunk.Loc + allocSize);
+	size_t remaining = chunk.Size - allocSize;
+
+	if (remaining)
+	{
+		chunk.Loc = (uint32)((uint8*)remainingPart - Pool->Buffer);
+		chunk.Size = (uint32)remaining;
+
+		// find sorted location the new free chunk 
+		int insertIdx = 0;
+		for (insertIdx; insertIdx < Pool->NumMemChunks; ++insertIdx)
+		{
+			if (chunk.Size > Pool->MemChunks[insertIdx].Size)
+			{
+				break;
+			}
+		}
+		// move smaller chunks down
+		for (int moveIdx = Pool->NumMemChunks - 1; moveIdx >= insertIdx; --moveIdx)
+		{
+			Pool->MemChunks[moveIdx] = Pool->MemChunks[moveIdx - 1];
+		}
+
+		Pool->MemChunks[insertIdx] = chunk;
+		Pool->NumMemChunks++;
+	}
+
+	return slot;
+}
+
+template<typename T>
+inline T *MemPoolAlloc(mem_pool *Pool, uint32 Count)
+{
+	return (T*)_MemPoolAlloc(Pool, Count * sizeof(T));
+}
+
 struct memory_arena
 {
 	uint8   *BasePtr;   // Start of Arena, in bytes

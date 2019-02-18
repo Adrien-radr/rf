@@ -70,13 +70,13 @@ typedef char str[MAX_STRLEN];
 #define MB (1024llu * KB)
 #define GB (1024llu * MB)
 
-inline bool IsAligned(uint32 Size, uint32 Align)
+inline bool IsAligned(uint64 p, uint64 align)
 {
-	Assert(Align > 0);
-	return (Size & (Align - 1)) == 0;
+	Assert(align > 0);
+	return (p & align - 1) == 0;
 }
 
-inline uint32 AlignUp(uint32 Size, uint32 Align)
+inline uint64 AlignUp(uint64 Size, uint64 Align)
 {
 	return Size + (((~Size) + 1) & (Align - 1));
 }

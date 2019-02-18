@@ -3,6 +3,211 @@
 #include "context.h"
 
 namespace rf {
+
+void _MemPoolAddFreeChunk(mem_pool *Pool, mem_chunk &chunk)
+{
+	int chunkIdx;
+	//find new loc to put the mergec chunk in
+	for (chunkIdx = 0; chunkIdx < Pool->NumMemChunks; ++chunkIdx)
+	{
+		if (chunk.Size > Pool->MemChunks[chunkIdx].Size)
+		{
+			break;
+		}
+	}
+
+	int moveIdx = Pool->NumMemChunks;
+
+	if (moveIdx < MEM_POOL_CHUNK_LIST_SIZE)
+	{ // already max number of recorded chunks, the smaller will be pushed out the list by design
+		Pool->NumMemChunks++;
+	}
+	else
+	{
+		moveIdx = MEM_POOL_CHUNK_LIST_SIZE - 1;
+	}
+
+	for (moveIdx; moveIdx > chunkIdx; --moveIdx)
+	{
+		Pool->MemChunks[moveIdx] = Pool->MemChunks[moveIdx - 1];
+	}
+
+	Pool->MemChunks[chunkIdx] = chunk;
+}
+
+void _MemPoolRemoveFreeChunk(mem_pool *Pool, int chunkIdx)
+{
+	Pool->MemChunks[chunkIdx] = mem_chunk{ 0,0 };
+	Pool->NumMemChunks--;
+
+	// consolidate
+	for (int i = chunkIdx; i < Pool->NumMemChunks; ++i)
+	{
+		Pool->MemChunks[i] = Pool->MemChunks[i + 1];
+	}
+}
+
+// Here we remove one free chunk, cut it with enough size for the asked alloc, and insert the remaining 
+// mem chunk in the chunk array, so that no overflow in number of chunks is possible.
+void *_MemPoolAlloc(mem_pool *Pool, uint64 Size)
+{
+	Assert(Pool);
+	//Assert(Pool->NumMemChunks);
+	// alloc so that the returned pointer is aligned to MEM_POOL_ALIGNMENT
+	// and has enough space before it to squeeze in the mem_addr header
+	uint64 allocSize = AlignUp(AlignUp(Size, MEM_POOL_ALIGNMENT) + 1, MEM_POOL_ALIGNMENT);
+	//Assert(Pool->MemChunks[0].Size >= allocSize);
+
+	if (!Pool->NumMemChunks || Pool->MemChunks[0].Size < allocSize)
+	{
+		printf("Alloc Error : not enough memory available in pool (asking %llu, available %d chunks maxSize %llu).\n",
+			allocSize, Pool->NumMemChunks, Pool->MemChunks[0].Size);
+		return nullptr;
+	}
+
+	// find first fitting chunk in list that bounds queried size
+	// start bottom up, getting the first that's large enough
+	int chunkIdx = Pool->NumMemChunks - 1;
+	mem_chunk chunk = Pool->MemChunks[chunkIdx];
+	for (chunkIdx; chunkIdx >= 0; --chunkIdx)
+	{
+		if (Pool->MemChunks[chunkIdx].Size >= allocSize)
+		{
+			// get the chunk from the array, erase it from there
+			chunk = Pool->MemChunks[chunkIdx];
+			_MemPoolRemoveFreeChunk(Pool, chunkIdx);
+			break;
+		}
+	}
+
+	if (chunkIdx < 0)
+	{
+		printf("Pool Alloc chunkIdx<0. Shouldn't happen !?!\n");
+		return nullptr;
+	}
+
+	// get the aligned chunk for return
+	// fill the hdr with loc/size info
+	uint64 slotLoc = AlignUp(AlignUp(chunk.Loc, MEM_POOL_ALIGNMENT) + 1, MEM_POOL_ALIGNMENT);
+	void *slot = (void*)(Pool->Buffer + slotLoc);
+	mem_addr *slotHdr = mem_addr__hdr(slot);
+	slotHdr->Loc = chunk.Loc;
+	slotHdr->Size = allocSize;
+
+	// put the cut part back in the available memchunk section
+	void *remainingPart = (void*)(Pool->Buffer + chunk.Loc + allocSize);
+	uint64 remaining = chunk.Size - allocSize;
+
+	if (remaining)
+	{
+		chunk.Loc = (uint64)((uint8*)remainingPart - Pool->Buffer);
+		chunk.Size = remaining;
+
+		_MemPoolAddFreeChunk(Pool, chunk);
+	}
+
+	return slot;
+}
+
+void _MemPoolFree(mem_pool *Pool, void *Ptr)
+{
+	mem_addr *ptrAddr = mem_addr__hdr(Ptr);
+
+	// zero the memory under the pointer, return it to the pool's available chunks
+	mem_chunk newChunk{ ptrAddr->Loc, ptrAddr->Size };
+	memset(Pool->Buffer + newChunk.Loc, 0, newChunk.Size);
+
+	// 1. find free chunks in the list that might be contiguous with the freed chunk, if so merge
+
+	// find slot for chunk insert
+	int prevChunkFreeIdx = -1;
+	int nextChunkFreeIdx = -1;
+
+	// find out if this chunk is the preceding or following chunk in contiguous memory for merging
+	for (int i = 0; i < Pool->NumMemChunks; ++i)
+	{
+		if (Pool->MemChunks[i].Loc == mem_chunk__end(&newChunk))
+		{
+			nextChunkFreeIdx = i;
+		}
+		else if (mem_chunk__end(&Pool->MemChunks[i]) == newChunk.Loc)
+		{
+			prevChunkFreeIdx = i;
+		}
+	}
+
+	// merge with prev and/or next chunks
+	if (prevChunkFreeIdx >= 0 || nextChunkFreeIdx >= 0)
+	{
+		if (prevChunkFreeIdx >= 0)
+		{
+			mem_chunk prevChunk = Pool->MemChunks[prevChunkFreeIdx];
+			_MemPoolRemoveFreeChunk(Pool, prevChunkFreeIdx);
+			newChunk.Loc = prevChunk.Loc;
+			newChunk.Size += prevChunk.Size;
+		}
+		if (nextChunkFreeIdx >= 0)
+		{
+			mem_chunk nextChunk = Pool->MemChunks[nextChunkFreeIdx];
+			_MemPoolRemoveFreeChunk(Pool, nextChunkFreeIdx);
+			newChunk.Size += nextChunk.Size;
+		}
+	}
+
+	_MemPoolAddFreeChunk(Pool, newChunk);
+}
+
+void *_MemPoolRealloc(mem_pool *Pool, void *Ptr, uint64 Size)
+{
+	// check if we can just extend the current chunk forward
+	mem_addr *ptrAddr = mem_addr__hdr(Ptr);
+	uint64 contiguousChunkStart = mem_chunk__end((mem_chunk*)ptrAddr);
+
+	int chunkIdx;
+	for (chunkIdx = 0; chunkIdx < Pool->NumMemChunks; ++chunkIdx)
+	{
+		if (Pool->MemChunks[chunkIdx].Loc == contiguousChunkStart)
+		{
+			break;
+		}
+	}
+
+	if (chunkIdx < Pool->NumMemChunks)
+	{
+		mem_chunk contiguousChunk = Pool->MemChunks[chunkIdx];
+		uint64 totalSize = ptrAddr->Size + contiguousChunk.Size;
+		uint64 slotLoc = AlignUp(AlignUp(ptrAddr->Loc, MEM_POOL_ALIGNMENT) + 1, MEM_POOL_ALIGNMENT);
+		uint64 hdrSize = slotLoc - ptrAddr->Loc;
+		uint64 allocSize = Size + hdrSize;
+		uint64 slotEnd = slotLoc + Size;
+		if (totalSize >= allocSize)
+		{ // grouped chunks are large enough to fit the realloc, use that
+			_MemPoolRemoveFreeChunk(Pool, chunkIdx);
+
+			// add the unneeded part back to the available list
+			mem_chunk cutChunk{ slotEnd, totalSize - allocSize };
+
+			_MemPoolAddFreeChunk(Pool, cutChunk);
+
+			ptrAddr->Size = allocSize;
+			return Ptr;
+		}
+	}
+
+	// if we cant extend, find a new chunk and move the memory there
+	void *retPtr = _MemPoolAlloc(Pool, Size);
+	if (retPtr)
+	{
+		memcpy(retPtr, Ptr, ptrAddr->Size);
+		_MemPoolFree(Pool, Ptr);
+		return retPtr;
+	}
+
+	printf("Error during MemPoolRealloc, didn't find a suitable realloc location.\n");
+
+	return nullptr;
+}
+
 void ConcatStrings(path Dst, path const Str1, path const Str2)
 {
     strncpy(Dst, Str1, MAX_PATH);

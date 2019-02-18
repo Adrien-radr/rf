@@ -21,6 +21,37 @@
 /// Memory pool and arena helper functions
 namespace rf {
 
+/*
+	RF Memory System
+
+	# Pool
+	- Are initialized once with a static amount of memory, they cannot be realloc'ed with a larger memory span.
+	- The developer should define beforehand how much memory his application will need.
+	- The goal is to have 1 calloc() at init and 1 free() at end of application.
+	- With a pool with a set amount of memory, one can ask for some of that pool's memory (alloc), give it back(free) or extend it(realloc)
+	- Manages free chunks in memory internally, sorted by decreasing size.
+	- A just freed chunk will try to merge itself with other free chunks if they are contiguous to avoid too much defragmentation
+
+		MEM_POOL_CHUNK_LIST_SIZE (def=256) - defines how much free chunks are stored in the pool internals. A created pool starts with 1 chunk
+			spanning the whole allocated capacity. Chunks are sorted in decreasing order of size. Chunks that fall off the CHUNK_LIST_SIZE are 
+			forgotten forever. The rationale for this is that they should be small anyway and not very useful to further allocation because of the
+			merging strategy
+		MEM_POOL_ALIGNMENT (def=16) - each pool automatically aligns the memory chunks it gives to askers to that value.
+
+	# Arena
+	- Use the pool system to ask for blocks of contiguous memory (e.g. blocks of 1KB, 1MB, etc), and store those blocks internally for use by systems
+	- Ultimately, each subsystem of the application should make use of its own arena so that everything is delimited
+	- The goal here is easy dealloc of a whole subsystem
+	- Arenas dynamically grow block by block by asking from its linked pool. It can grow for as much as there is memory in the pool
+
+	# Buf (strechy buffer, dynamic array)
+	- Tries to emulate std::vector-like behaviour
+	- Grows dynamically relatively to its current size by a constant factor
+	- Can ask memory from a linked arena from which it gets its memory
+
+	Pool --> Arena --> Buffer
+*/
+
 #define MEM_POOL_CHUNK_LIST_SIZE 256
 #define MEM_POOL_ALIGNMENT 16
 
@@ -101,6 +132,11 @@ inline void PoolFree(mem_pool *Pool, T *Ptr)
 {
 	_MemPoolFree(Pool, (void*)Ptr);
 }
+
+struct mem_arena
+{
+
+};
 
 struct memory_arena
 {

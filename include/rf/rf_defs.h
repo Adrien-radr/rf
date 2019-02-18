@@ -38,7 +38,7 @@ namespace rf {
 			merging strategy
 		MEM_POOL_ALIGNMENT (def=16) - each pool automatically aligns the memory chunks it gives to askers to that value.
 
-	# Arena
+	# Arena (static large-block memory)
 	- Use the pool system to ask for blocks of contiguous memory (e.g. blocks of 1KB, 1MB, etc), and store those blocks internally for use by systems
 	- Ultimately, each subsystem of the application should make use of its own arena so that everything is delimited
 	- The goal here is easy dealloc of a whole subsystem
@@ -47,15 +47,20 @@ namespace rf {
 	  pool-alloc'ed memory.
 
 	# Buf (strechy buffer, dynamic array)
+		 From Per Vognsen's Bitwise, from Sean Barrett
+		 Adapted to C++ and Pool system
 	- Tries to emulate std::vector-like behaviour
 	- Grows dynamically relatively to its current size by a constant factor
-	- Can ask memory from a linked arena from which it gets its memory
+	- Can ask memory from a pool from which it gets its memory
+
+		MEM_BUF_GROW_FACTOR (def=1.5) - Constant growth factor that multiplies the current capacity of the dynamic buffer when over-capacity
 
 	Pool --> Arena --> Buffer
 */
 
 #define MEM_POOL_CHUNK_LIST_SIZE 256
 #define MEM_POOL_ALIGNMENT 16
+#define MEM_BUF_GROW_FACTOR 1.5
 
 struct mem_chunk
 {
@@ -70,9 +75,6 @@ struct mem_addr
 	void *Ptr;
 };
 
-#define mem_addr__hdr(a) ((mem_addr*)((uint8*)(a) - offsetof(mem_addr, Ptr)))
-inline uint64 mem_chunk__end(mem_chunk *chunk) { return chunk->Loc + chunk->Size; }
-
 struct mem_pool
 {
 	uint32		Capacity;
@@ -81,21 +83,30 @@ struct mem_pool
 	uint8		*Buffer;
 };
 
-inline mem_pool *MemPoolCreate(uint32 PoolCapacity)
+struct mem_buf
 {
-	mem_pool *pool = (mem_pool*)calloc(1, sizeof(mem_pool));
-	pool->Buffer = (uint8*)calloc(1, (size_t)PoolCapacity);
-	pool->MemChunks[0] = mem_chunk{ 0, PoolCapacity };
-	pool->NumMemChunks = 1;
-	return pool;
-}
+	uint64	 Size;
+	uint64	 Capacity;
+	mem_pool *Pool;
+	uint8	 BufferData[1];
+};
 
-inline void MemPoolDestroy(mem_pool **Pool)
+struct mem_arena
 {
-	free((*Pool)->Buffer);
-	free(*Pool);
-	*Pool = nullptr;
-}
+
+};
+
+#define mem_addr__hdr(a) ((mem_addr*)((uint8*)(a) - offsetof(mem_addr, Ptr)))
+#define mem_buf__hdr(b) ((mem_buf*)((uint8*)(b) - offsetof(mem_buf, BufferData)))
+inline uint64 mem_chunk__end(mem_chunk *chunk) { return chunk->Loc + chunk->Size; }
+
+// Following functions are internal and shouldn't be used.
+// Use the public interface functions further below instead
+void _MemPoolAddFreeChunk(mem_pool *Pool, mem_chunk &chunk);
+void _MemPoolRemoveFreeChunk(mem_pool *Pool, int chunkIdx);
+void *_MemPoolAlloc(mem_pool *Pool, uint64 Size);
+void *_MemPoolRealloc(mem_pool *Pool, void *Ptr, uint64 Size);
+void _MemPoolFree(mem_pool *Pool, void *Ptr);
 
 inline void _MemPoolPrintStatus(mem_pool *Pool)
 {
@@ -109,13 +120,43 @@ inline void _MemPoolPrintStatus(mem_pool *Pool)
 	}
 }
 
-// Following functions are internal and shouldn't be used.
-// Use the Alloc/Realloc/Free functions below instead
-void _MemPoolAddFreeChunk(mem_pool *Pool, mem_chunk &chunk);
-void _MemPoolRemoveFreeChunk(mem_pool *Pool, int chunkIdx);
-void *_MemPoolAlloc(mem_pool *Pool, uint64 Size);
-void *_MemPoolRealloc(mem_pool *Pool, void *Ptr, uint64 Size);
-void _MemPoolFree(mem_pool *Pool, void *Ptr);
+// TODO - use mem_buf for dynamic strings (FromString, Concat, Print, ...)
+void *_MemBufGrow(mem_pool *Pool, void *Buf, uint64 Count, uint64 ElemSize);
+
+template<typename T>
+inline void _MemBufCheckGrowth(T **b, uint64 Size)
+{
+	if (Size > BufCapacity(*b))
+	{
+		*b = (T*)_MemBufGrow(mem_buf__hdr(*b)->Pool, *b, Size, sizeof(T));
+	}
+}
+
+// ##########################################################################
+// Public interface for RF Memory system
+inline mem_pool *PoolCreate(uint32 PoolCapacity)
+{
+	mem_pool *pool = (mem_pool*)calloc(1, sizeof(mem_pool));
+	pool->Buffer = (uint8*)calloc(1, (size_t)PoolCapacity);
+	pool->MemChunks[0] = mem_chunk{ 0, PoolCapacity };
+	pool->NumMemChunks = 1;
+	pool->Capacity = PoolCapacity;
+	return pool;
+}
+
+inline void PoolDestroy(mem_pool **Pool)
+{
+	free((*Pool)->Buffer);
+	free(*Pool);
+	*Pool = nullptr;
+}
+
+inline void PoolClear(mem_pool *Pool)
+{
+	Pool->NumMemChunks = 1;
+	Pool->MemChunks[0] = mem_chunk{ 0, Pool->Capacity };
+	memset(Pool->Buffer, 0, Pool->Capacity);
+}
 
 template<typename T>
 inline T *PoolAlloc(mem_pool *Pool, uint32 Count)
@@ -135,10 +176,27 @@ inline void PoolFree(mem_pool *Pool, T *Ptr)
 	_MemPoolFree(Pool, (void*)Ptr);
 }
 
-struct mem_arena
-{
+#define BufSize(b)		((b) ? mem_buf__hdr(b)->Size : 0)
+#define BufCapacity(b)	((b) ? mem_buf__hdr(b)->Capacity : 0)
+#define BufEnd(b)		((b) + BufSize(b))
+#define BufClear(b)		((b) ? mem_buf__hdr(b)->Size = 0 : 0)
+#define BufFree(b)		((b) ? (_MemPoolFree(mem_buf__hdr(b)->Pool, mem_buf__hdr(b)), (b) = nullptr) : 0)
 
-};
+template<typename T>
+inline T *BufInit(mem_pool *Pool, uint64 Capacity = 0)
+{
+	return (T*)_MemBufGrow(Pool, nullptr, Capacity, sizeof(T));
+}
+
+template<typename T>
+inline void BufPush(T *b, T v)
+{
+	_MemBufCheckGrowth(&b, BufSize(b) + 1);
+	b[mem_buf__hdr(b)->Size++] = v;
+}
+
+// ##########################################################################
+
 
 struct memory_arena
 {

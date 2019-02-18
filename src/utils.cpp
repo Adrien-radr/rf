@@ -62,6 +62,7 @@ void *_MemPoolAlloc(mem_pool *Pool, uint64 Size)
 	{
 		printf("Alloc Error : not enough memory available in pool (asking %llu, available %d chunks maxSize %llu).\n",
 			allocSize, Pool->NumMemChunks, Pool->MemChunks[0].Size);
+		Assert(false);
 		return nullptr;
 	}
 
@@ -83,6 +84,7 @@ void *_MemPoolAlloc(mem_pool *Pool, uint64 Size)
 	if (chunkIdx < 0)
 	{
 		printf("Pool Alloc chunkIdx<0. Shouldn't happen !?!\n");
+		Assert(false);
 		return nullptr;
 	}
 
@@ -111,14 +113,13 @@ void *_MemPoolAlloc(mem_pool *Pool, uint64 Size)
 
 void _MemPoolFree(mem_pool *Pool, void *Ptr)
 {
+	Assert(Pool);
 	mem_addr *ptrAddr = mem_addr__hdr(Ptr);
 
 	// zero the memory under the pointer, return it to the pool's available chunks
 	mem_chunk newChunk{ ptrAddr->Loc, ptrAddr->Size };
 	memset(Pool->Buffer + newChunk.Loc, 0, newChunk.Size);
-
-	// 1. find free chunks in the list that might be contiguous with the freed chunk, if so merge
-
+	
 	// find slot for chunk insert
 	int prevChunkFreeIdx = -1;
 	int nextChunkFreeIdx = -1;
@@ -159,6 +160,7 @@ void _MemPoolFree(mem_pool *Pool, void *Ptr)
 
 void *_MemPoolRealloc(mem_pool *Pool, void *Ptr, uint64 Size)
 {
+	Assert(Pool);
 	// check if we can just extend the current chunk forward
 	mem_addr *ptrAddr = mem_addr__hdr(Ptr);
 	uint64 contiguousChunkStart = mem_chunk__end((mem_chunk*)ptrAddr);
@@ -204,9 +206,31 @@ void *_MemPoolRealloc(mem_pool *Pool, void *Ptr, uint64 Size)
 	}
 
 	printf("Error during MemPoolRealloc, didn't find a suitable realloc location.\n");
+	Assert(false);
 
 	return nullptr;
 }
+
+void *_MemBufGrow(mem_pool *Pool, void *Buf, uint64 Count, uint64 ElemSize)
+{
+	uint64 newCapacity = Max((uint64)(MEM_BUF_GROW_FACTOR * BufCapacity(Buf)), Max(Count, 16));
+	uint64 newAllocSize = newCapacity * ElemSize + offsetof(mem_buf, BufferData);
+	mem_buf *retBuf;
+	if (Buf)
+	{
+		mem_buf *oldBuf = mem_buf__hdr(Buf);
+		retBuf = (mem_buf*)_MemPoolRealloc(Pool, oldBuf, newAllocSize);
+	}
+	else
+	{
+		retBuf = (mem_buf*)_MemPoolAlloc(Pool, newAllocSize);
+		retBuf->Size = 0;
+	}
+	retBuf->Capacity = newCapacity;
+	retBuf->Pool = Pool;
+	return (void*)retBuf->BufferData;
+}
+
 
 void ConcatStrings(path Dst, path const Str1, path const Str2)
 {

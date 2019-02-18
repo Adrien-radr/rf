@@ -43,6 +43,8 @@ namespace rf {
 	- Ultimately, each subsystem of the application should make use of its own arena so that everything is delimited
 	- The goal here is easy dealloc of a whole subsystem
 	- Arenas dynamically grow block by block by asking from its linked pool. It can grow for as much as there is memory in the pool
+	- Individual allocations in an arena are not deallocable, only allocs are allowed in arenas, that will push the arena ptr forward in its own 
+	  pool-alloc'ed memory.
 
 	# Buf (strechy buffer, dynamic array)
 	- Tries to emulate std::vector-like behaviour

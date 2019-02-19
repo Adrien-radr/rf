@@ -120,13 +120,13 @@ inline void _MemPoolPrintStatus(mem_pool *Pool)
 	}
 }
 
-// TODO - use mem_buf for dynamic strings (FromString, Concat, Print, ...)
-void *_MemBufGrow(mem_pool *Pool, void *Buf, uint64 Count, uint64 ElemSize);
+void *_MemBufGrow(mem_pool *Pool, void *Ptr, uint64 Count, uint64 ElemSize);
 
 template<typename T>
 inline void _MemBufCheckGrowth(T **b, uint64 Size)
 {
-	if (Size > BufCapacity(*b))
+	uint64 cap = (*b) ? mem_buf__hdr(*b)->Capacity : 0;
+	if (Size > cap)
 	{
 		*b = (T*)_MemBufGrow(mem_buf__hdr(*b)->Pool, *b, Size, sizeof(T));
 	}
@@ -183,7 +183,7 @@ inline void PoolFree(mem_pool *Pool, T *Ptr)
 #define BufFree(b)		((b) ? (_MemPoolFree(mem_buf__hdr(b)->Pool, mem_buf__hdr(b)), (b) = nullptr) : 0)
 
 template<typename T>
-inline T *BufInit(mem_pool *Pool, uint64 Capacity = 0)
+inline T *Buf(mem_pool *Pool, uint64 Capacity = 0)
 {
 	return (T*)_MemBufGrow(Pool, nullptr, Capacity, sizeof(T));
 }
@@ -194,6 +194,13 @@ inline void BufPush(T *b, T v)
 	_MemBufCheckGrowth(&b, BufSize(b) + 1);
 	b[mem_buf__hdr(b)->Size++] = v;
 }
+
+// create a new mem_buf string from nothing
+char *Str(mem_pool *Pool, const char *StrFmt, ...);
+
+// concat a new formatted string to an existing mem_buf string (created by Str() or Buf<char>())
+void StrCat(char **StrBuf, const char *StrFmt, ...);
+
 
 // ##########################################################################
 

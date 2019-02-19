@@ -211,14 +211,14 @@ void *_MemPoolRealloc(mem_pool *Pool, void *Ptr, uint64 Size)
 	return nullptr;
 }
 
-void *_MemBufGrow(mem_pool *Pool, void *Buf, uint64 Count, uint64 ElemSize)
+void *_MemBufGrow(mem_pool *Pool, void *Ptr, uint64 Count, uint64 ElemSize)
 {
-	uint64 newCapacity = Max((uint64)(MEM_BUF_GROW_FACTOR * BufCapacity(Buf)), Max(Count, 16));
+	uint64 newCapacity = Max((uint64)(MEM_BUF_GROW_FACTOR * BufCapacity(Ptr)), Max(Count, 16));
 	uint64 newAllocSize = newCapacity * ElemSize + offsetof(mem_buf, BufferData);
 	mem_buf *retBuf;
-	if (Buf)
+	if (Ptr)
 	{
-		mem_buf *oldBuf = mem_buf__hdr(Buf);
+		mem_buf *oldBuf = mem_buf__hdr(Ptr);
 		retBuf = (mem_buf*)_MemPoolRealloc(Pool, oldBuf, newAllocSize);
 	}
 	else
@@ -231,6 +231,40 @@ void *_MemBufGrow(mem_pool *Pool, void *Buf, uint64 Count, uint64 ElemSize)
 	return (void*)retBuf->BufferData;
 }
 
+// Takes in a mem_buf char*, writes the given formatted string in
+// Extends the mem_buf capacity (from pool realloc) if too small
+void StrCat(char **StrBuf, const char *StrFmt, ...)
+{
+	// try vsnprintf the fmt'ed str in, grow the buffer if we couldnt write it all in
+	va_list args;
+	va_start(args, StrFmt);
+	uint64 remainingCap = BufCapacity(*StrBuf) - BufSize(*StrBuf);
+	uint64 strLen = vsnprintf(BufEnd(*StrBuf), remainingCap, StrFmt, args) + 1;
+	va_end(args);
+	if (strLen > remainingCap)
+	{
+		_MemBufCheckGrowth(StrBuf, BufSize(*StrBuf) + strLen);
+		va_start(args, StrFmt);
+		remainingCap = BufCapacity(*StrBuf) - BufSize(*StrBuf);
+		strLen = vsnprintf(BufEnd(*StrBuf), remainingCap, StrFmt, args) + 1;
+		va_end(args);
+	}
+	mem_buf__hdr(*StrBuf)->Size += strLen - 1;
+}
+
+// create a new mem_buf string from nothing
+char *Str(mem_pool *Pool, const char *StrFmt, ...)
+{
+	va_list args;
+	va_start(args, StrFmt);
+	char c;
+	uint64 strLen = vsnprintf(&c, 1, StrFmt, args) + 1;
+	char *retBuf = Buf<char>(Pool, strLen);
+	vsnprintf(retBuf, strLen, StrFmt, args);
+	va_end(args);
+	mem_buf__hdr(retBuf)->Size = strLen - 1;
+	return retBuf;
+}
 
 void ConcatStrings(path Dst, path const Str1, path const Str2)
 {

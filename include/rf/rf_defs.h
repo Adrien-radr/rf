@@ -46,21 +46,23 @@ namespace rf {
 	- Individual allocations in an arena are not deallocable, only allocs are allowed in arenas, that will push the arena ptr forward in its own 
 	  pool-alloc'ed memory.
 
+		MEM_ARENA_BLOCK_SIZE (def=1MB) - Block size for arena allocation. this is the min amount of memory retrieved from the pool each time the
+			arena has to grow
+
 	# Buf (strechy buffer, dynamic array)
 		 From Per Vognsen's Bitwise, from Sean Barrett
 		 Adapted to C++ and Pool system
 	- Tries to emulate std::vector-like behaviour
 	- Grows dynamically relatively to its current size by a constant factor
-	- Can ask memory from a pool from which it gets its memory
+	- Gets memory from a pool
 
 		MEM_BUF_GROW_FACTOR (def=1.5) - Constant growth factor that multiplies the current capacity of the dynamic buffer when over-capacity
-
-	Pool --> Arena --> Buffer
 */
 
 #define MEM_POOL_CHUNK_LIST_SIZE 256
 #define MEM_POOL_ALIGNMENT 16
 #define MEM_BUF_GROW_FACTOR 1.5
+#define MEM_ARENA_BLOCK_SIZE (1llu * MB)
 
 struct mem_chunk
 {
@@ -93,7 +95,12 @@ struct mem_buf
 
 struct mem_arena
 {
+	uint8		*Ptr;
+	uint8		*BlockEnd;
+	mem_pool	*Pool;
+	uint8		**Blocks;
 
+	mem_arena() : Ptr(nullptr), BlockEnd(nullptr), Pool(nullptr), Blocks(nullptr) {}
 };
 
 #define mem_addr__hdr(a) ((mem_addr*)((uint8*)(a) - offsetof(mem_addr, Ptr)))
@@ -107,18 +114,7 @@ void _MemPoolRemoveFreeChunk(mem_pool *Pool, int chunkIdx);
 void *_MemPoolAlloc(mem_pool *Pool, uint64 Size);
 void *_MemPoolRealloc(mem_pool *Pool, void *Ptr, uint64 Size);
 void _MemPoolFree(mem_pool *Pool, void *Ptr);
-
-inline void _MemPoolPrintStatus(mem_pool *Pool)
-{
-	for (int i = 0; i < Pool->NumMemChunks; ++i)
-	{
-		printf("free chunk %d : loc %llu size %llu.\n", i, Pool->MemChunks[i].Loc, Pool->MemChunks[i].Size);
-	}
-	if (!Pool->NumMemChunks)
-	{
-		printf("no free chunks\n");
-	}
-}
+void _MemPoolPrintStatus(mem_pool *Pool);
 
 void *_MemBufGrow(mem_pool *Pool, void *Ptr, uint64 Count, uint64 ElemSize);
 
@@ -131,6 +127,9 @@ inline void _MemBufCheckGrowth(T **b, uint64 Size)
 		*b = (T*)_MemBufGrow(mem_buf__hdr(*b)->Pool, *b, Size, sizeof(T));
 	}
 }
+
+void _ArenaGrow(mem_arena *Arena, uint64 MinSize);
+void *_ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Size);
 
 // ##########################################################################
 // Public interface for RF Memory system
@@ -159,13 +158,13 @@ inline void PoolClear(mem_pool *Pool)
 }
 
 template<typename T>
-inline T *PoolAlloc(mem_pool *Pool, uint32 Count)
+inline T *PoolAlloc(mem_pool *Pool, uint64 Count)
 {
 	return (T*)_MemPoolAlloc(Pool, Count * sizeof(T));
 }
 
 template<typename T>
-inline T *PoolRealloc(mem_pool *Pool, T *Ptr, uint32 Count)
+inline T *PoolRealloc(mem_pool *Pool, T *Ptr, uint64 Count)
 {
 	return (T*)_MemPoolRealloc(Pool, (void*)Ptr, Count * sizeof(T));
 }
@@ -201,6 +200,14 @@ char *Str(mem_pool *Pool, const char *StrFmt, ...);
 // concat a new formatted string to an existing mem_buf string (created by Str() or Buf<char>())
 void StrCat(char **StrBuf, const char *StrFmt, ...);
 
+template<typename T>
+T *ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Count)
+{
+	return (T*)_ArenaAlloc(Arena, Pool, Count * sizeof(T));
+}
+
+// Frees the whole arena and its blocks, after that, allocing restart from the beginning
+void ArenaFree(mem_arena *Arena);
 
 // ##########################################################################
 

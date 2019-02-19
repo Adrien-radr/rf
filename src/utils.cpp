@@ -211,6 +211,18 @@ void *_MemPoolRealloc(mem_pool *Pool, void *Ptr, uint64 Size)
 	return nullptr;
 }
 
+void _MemPoolPrintStatus(mem_pool *Pool)
+{
+	for (int i = 0; i < Pool->NumMemChunks; ++i)
+	{
+		printf("free chunk %d : loc %llu size %llu.\n", i, Pool->MemChunks[i].Loc, Pool->MemChunks[i].Size);
+	}
+	if (!Pool->NumMemChunks)
+	{
+		printf("no free chunks\n");
+	}
+}
+
 void *_MemBufGrow(mem_pool *Pool, void *Ptr, uint64 Count, uint64 ElemSize)
 {
 	uint64 newCapacity = Max((uint64)(MEM_BUF_GROW_FACTOR * BufCapacity(Ptr)), Max(Count, 16));
@@ -264,6 +276,42 @@ char *Str(mem_pool *Pool, const char *StrFmt, ...)
 	va_end(args);
 	mem_buf__hdr(retBuf)->Size = strLen - 1;
 	return retBuf;
+}
+
+void _ArenaGrow(mem_arena *Arena, uint64 MinSize)
+{
+	uint64 size = Max(MinSize, MEM_ARENA_BLOCK_SIZE);
+	Arena->Ptr = PoolAlloc<uint8>(Arena->Pool, size);
+	Arena->BlockEnd = Arena->Ptr + size;
+	if (!Arena->Blocks)
+	{
+		Arena->Blocks = Buf<uint8*>(Arena->Pool);
+	}
+	BufPush(Arena->Blocks, Arena->Ptr);
+}
+
+void *_ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Size)
+{
+	if (Size > (uint64)(Arena->BlockEnd - Arena->Ptr))
+	{
+		Arena->Pool = Pool;
+		_ArenaGrow(Arena, Size);
+	}
+	void *ptr = Arena->Ptr;
+	Arena->Ptr = Arena->Ptr + Size;
+	return ptr;
+}
+
+void ArenaFree(mem_arena *Arena)
+{
+	Assert(Arena->Pool);
+	for (uint8 **it = Arena->Blocks; it != BufEnd(Arena->Blocks); ++it)
+	{
+		PoolFree(Arena->Pool, *it);
+	}
+	BufFree(Arena->Blocks);
+	Arena->Pool = nullptr;
+	Arena->Ptr = Arena->BlockEnd = nullptr;
 }
 
 void ConcatStrings(path Dst, path const Str1, path const Str2)

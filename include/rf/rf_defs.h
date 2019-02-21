@@ -46,7 +46,7 @@ namespace rf {
 	- Individual allocations in an arena are not deallocable, only allocs are allowed in arenas, that will push the arena ptr forward in its own 
 	  pool-alloc'ed memory.
 
-		MEM_ARENA_BLOCK_SIZE (def=1MB) - Block size for arena allocation. this is the min amount of memory retrieved from the pool each time the
+		MEM_ARENA_BLOCK_SIZE (def=4KB) - Block size for arena allocation. this is the min amount of memory retrieved from the pool each time the
 			arena has to grow
 
 	# Buf (strechy buffer, dynamic array)
@@ -62,7 +62,7 @@ namespace rf {
 #define MEM_POOL_CHUNK_LIST_SIZE 256
 #define MEM_POOL_ALIGNMENT 16
 #define MEM_BUF_GROW_FACTOR 1.5
-#define MEM_ARENA_BLOCK_SIZE (1llu * MB)
+#define MEM_ARENA_BLOCK_SIZE (4llu * KB)
 
 struct mem_chunk
 {
@@ -79,7 +79,7 @@ struct mem_addr
 
 struct mem_pool
 {
-	uint32		Capacity;
+	uint64		Capacity;
 	mem_chunk	MemChunks[MEM_POOL_CHUNK_LIST_SIZE];
 	int32		NumMemChunks;
 	uint8		*Buffer;
@@ -133,10 +133,10 @@ void *_ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Size);
 
 // ##########################################################################
 // Public interface for RF Memory system
-inline mem_pool *PoolCreate(uint32 PoolCapacity)
+inline mem_pool *PoolCreate(uint64 PoolCapacity)
 {
 	mem_pool *pool = (mem_pool*)calloc(1, sizeof(mem_pool));
-	pool->Buffer = (uint8*)calloc(1, (size_t)PoolCapacity);
+	pool->Buffer = (uint8*)calloc(1, PoolCapacity);
 	pool->MemChunks[0] = mem_chunk{ 0, PoolCapacity };
 	pool->NumMemChunks = 1;
 	pool->Capacity = PoolCapacity;
@@ -175,6 +175,9 @@ inline void PoolFree(mem_pool *Pool, T *Ptr)
 	_MemPoolFree(Pool, (void*)Ptr);
 }
 
+// return occupancy of the given pool (percentage of occupied space)
+real32 PoolOccupancy(mem_pool *Pool);
+
 #define BufSize(b)		((b) ? mem_buf__hdr(b)->Size : 0)
 #define BufCapacity(b)	((b) ? mem_buf__hdr(b)->Capacity : 0)
 #define BufEnd(b)		((b) + BufSize(b))
@@ -210,7 +213,7 @@ T *ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Count)
 void ArenaFree(mem_arena *Arena);
 
 // ##########################################################################
-
+#if 0
 
 struct memory_arena
 {
@@ -249,8 +252,9 @@ inline void *_PushArenaData(memory_arena *Arena, uint64 ElemSize, uint64 ElemCou
 		Arena->Size, Arena->Capacity, ElemSize, ElemCount, Align);
 	return nullptr;
 }
+#endif
 }
-
+#if 0
 #define POOL_OFFSET(Pool, Structure) ((uint8*)(Pool) + sizeof(Structure))
 
 template<typename T>
@@ -258,7 +262,7 @@ T* Alloc(rf::memory_arena *Arena, uint32 Count = 1, uint32 Align = 1)
 {
 	return (T*)rf::_PushArenaData(Arena, sizeof(T), Count, Align);
 }
-
+#endif
 namespace rf {
 struct context;
 typedef uint8 key_state;

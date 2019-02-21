@@ -223,6 +223,19 @@ void _MemPoolPrintStatus(mem_pool *Pool)
 	}
 }
 
+real32 PoolOccupancy(mem_pool *Pool)
+{
+	uint64 freeSpace = 0;
+	for (int i = 0; i < Pool->NumMemChunks; ++i)
+	{
+		freeSpace += Pool->MemChunks[i].Size;
+	}
+
+	real64 freeRatio = freeSpace / (real64)(Pool->Capacity);
+	return (real32)(1.0 - freeRatio);
+}
+
+
 void *_MemBufGrow(mem_pool *Pool, void *Ptr, uint64 Count, uint64 ElemSize)
 {
 	uint64 newCapacity = Max((uint64)(MEM_BUF_GROW_FACTOR * BufCapacity(Ptr)), Max(Count, 16));
@@ -379,7 +392,7 @@ void *ReadFileContents(context *Context, path const Filename, int32 *FileSize)
         {
             int32 Size = ftell(fp);
             rewind(fp);
-			Contents = Alloc<char>(Context->ScratchArena, Size + 1);
+			Contents = PoolAlloc<char>(Context->ScratchPool, Size + 1);
             size_t Read = fread(Contents, Size, 1, fp);
             if(Read != 1)
             {

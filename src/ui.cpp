@@ -54,7 +54,7 @@ static uint32       VBO[2];
 // 1 array of uint16 for the indices
 static void         *RenderCmd[UI_MAX_PANELS];
 static uint32       RenderCmdCount[UI_MAX_PANELS];
-static memory_arena RenderCmdArena[UI_MAX_PANELS];
+static mem_arena	RenderCmdArena[UI_MAX_PANELS];
 
 enum widget_type {
 	WIDGET_PANEL,
@@ -210,9 +210,11 @@ void ReloadShaders(context *Context)
 void BeginFrame(input *Input)
 {
 	// TODO -  probably this can be done with 1 'alloc' and redirections in the buffer
+	uint8 *RenderCmdBuffer = PoolAlloc<uint8>(ui::Context->ScratchPool, UI_STACK_SIZE);
+	uint64 panelStackSize = UI_STACK_SIZE / UI_MAX_PANELS;
 	for (uint32 p = 0; p < UI_MAX_PANELS; ++p)
 	{
-		RenderCmd[p] = (void*)Alloc<uint8>(ui::Context->ScratchArena, UI_STACK_SIZE / UI_MAX_PANELS);
+		RenderCmd[p] = RenderCmdBuffer + panelStackSize;
 		InitArena(&RenderCmdArena[p], UI_STACK_SIZE / UI_MAX_PANELS, RenderCmd[p]);
 	}
 	memset(RenderCmdCount, 0, UI_MAX_PANELS * sizeof(uint32));

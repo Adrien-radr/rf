@@ -165,9 +165,9 @@ context *Init(context_descriptor const *Desc)
 
 	bool GLFWValid = false, GLEWValid = false;//, SoundValid = false;
 
-	context *Context = Alloc<context>(Desc->SessionArena);
-	Context->SessionArena = Desc->SessionArena;
-	Context->ScratchArena = Desc->ScratchArena;
+	context *Context = rf::PoolAlloc<context>(Desc->SessionPool, 1);
+	Context->SessionPool = Desc->SessionPool;
+	Context->ScratchPool = Desc->ScratchPool;
 
 	GetExecutablePath(Context->RenderResources.ExecutablePath);
 
@@ -276,17 +276,17 @@ context *Init(context_descriptor const *Desc)
 				glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 				vec3i texColor = vec3i(255, 255, 255);
-				Context->RenderResources.DefaultDiffuseTexture = Alloc<uint32>(Context->SessionArena);
+				Context->RenderResources.DefaultDiffuseTexture = rf::PoolAlloc<uint32>(Context->SessionPool, 1);
 				*Context->RenderResources.DefaultDiffuseTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
 					GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
 				texColor = vec3i(127, 127, 255);
-				Context->RenderResources.DefaultNormalTexture = Alloc<uint32>(Context->SessionArena);
+				Context->RenderResources.DefaultNormalTexture = rf::PoolAlloc<uint32>(Context->SessionPool, 1);
 				*Context->RenderResources.DefaultNormalTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
 					GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
 				texColor = vec3i(0, 0, 0);
-				Context->RenderResources.DefaultEmissiveTexture = Alloc<uint32>(Context->SessionArena);
+				Context->RenderResources.DefaultEmissiveTexture = rf::PoolAlloc<uint32>(Context->SessionPool, 1);
 				*Context->RenderResources.DefaultEmissiveTexture = Make2DTexture((void*)&texColor, 1, 1, 3, false, false, 1,
 					GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 			}

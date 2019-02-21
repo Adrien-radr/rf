@@ -181,7 +181,7 @@ image *ResourceLoadImage(context *Context, path const Filename, bool IsFloat, bo
         return (image*)LoadedResource;
     }
 
-    image *Image = Alloc<image>(Context->SessionArena);
+    image *Image = rf::PoolAlloc<image>(Context->SessionPool, 1);
     stbi_set_flip_vertically_on_load(FlipY ? 1 : 0); // NOTE - Flip Y so textures are Y-descending
 
     if(IsFloat)
@@ -345,7 +345,7 @@ uint32 *ResourceLoad2DTexture(context *Context, path const Filename, bool IsFloa
         return (uint32*)LoadedResource;
     }
 
-    uint32 *Tex = Alloc<uint32>(Context->SessionArena);
+    uint32 *Tex = rf::PoolAlloc<uint32>(Context->SessionPool, 1);
     *Tex = Make2DTexture(ResourceLoadImage(Context, Filename, IsFloat, true, ForceNumChannel),
                          IsFloat, FloatHalfPrecision, AnisotropicLevel, MagFilter, MinFilter, WrapS, WrapT);
 
@@ -509,7 +509,7 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
         return (font*)LoadedResource;
     }
 
-    font *Font = Alloc<font>(Context->SessionArena);
+    font *Font = rf::PoolAlloc<font>(Context->SessionPool, 1);
 
     void *Contents = ReadFileContents(Context, Filename, 0);
     if(Contents)
@@ -528,8 +528,8 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
         Font->NumGlyphs = STBFont.numGlyphs;
         Font->Char0 = Char0;
         Font->CharN = CharN;
-        Font->Buffer = Alloc<uint8>(Context->SessionArena, (uint32)(Font->Width*Font->Height));
-        Font->Glyphs = Alloc<glyph>(Context->SessionArena, (uint32)(Font->CharN - Font->Char0));
+        Font->Buffer = rf::PoolAlloc<uint8>(Context->SessionPool, (uint32)(Font->Width*Font->Height));
+        Font->Glyphs = rf::PoolAlloc<glyph>(Context->SessionPool, (uint32)(Font->CharN - Font->Char0));
         Font->LineGap = Ascent - Descent;
         Font->Ascent = Ascent;
         Font->MaxGlyphWidth = 0;
@@ -604,7 +604,7 @@ uint32 _CompileShader(context *Context, char const *Src, int Type)
         GLint Len;
         glGetShaderiv(Shader, GL_INFO_LOG_LENGTH, &Len);
 
-		GLchar *Log = Alloc<GLchar>(Context->ScratchArena, Len);
+		GLchar *Log = PoolAlloc<GLchar>(Context->ScratchPool, Len);
         glGetShaderInfoLog(Shader, Len, NULL, Log);
 
         LogError("Shader Compilation Error\n"
@@ -704,7 +704,7 @@ uint32 BuildShaderFromSource(context *Context, char const *VSrc, char const *FSr
         GLint Len;
         glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &Len);
 
-        GLchar *Log = Alloc<GLchar>(Context->ScratchArena, Len);
+        GLchar *Log = PoolAlloc<GLchar>(Context->ScratchPool, Len);
         glGetProgramInfoLog(ProgramID, Len, NULL, Log);
 
         LogError("Shader Program link error : \n"
@@ -1007,9 +1007,9 @@ display_text MakeDisplayText(context *Context, font *Font, char const *Msg, int 
     uint32 PS = 4 * 3;
     uint32 TS = 4 * 2;
 
-	real32 *Positions = Alloc<real32>(Context->ScratchArena, 3 * VertexCount);
-    real32 *Texcoords = Alloc<real32>(Context->ScratchArena, 2 * VertexCount);
-    uint32 *Indices = Alloc<uint32>(Context->ScratchArena, IndexCount);
+	real32 *Positions = PoolAlloc<real32>(Context->ScratchPool, 3 * VertexCount);
+    real32 *Texcoords = PoolAlloc<real32>(Context->ScratchPool, 2 * VertexCount);
+    uint32 *Indices = PoolAlloc<uint32>(Context->ScratchPool, IndexCount);
 
     int X = 0, Y = 0;
     for(uint32 i = 0; i < MsgLength; ++i)
@@ -1240,9 +1240,9 @@ mesh Make2DQuad(context *Context, vec2f Start, vec2f End, int Subdivisions)
     vec2f Stride = Rect / (real32)QuadCount1D;
     vec2f TexStride = vec2f(1,1) / (real32)QuadCount1D;
 
-	vec2f *Positions = Alloc<vec2f>(Context->ScratchArena, VertexCount);
-    vec2f *Texcoords = Alloc<vec2f>(Context->ScratchArena, VertexCount);
-    uint16 *Indices  = Alloc<uint16>(Context->ScratchArena, Quad.IndexCount);
+	vec2f *Positions = PoolAlloc<vec2f>(Context->ScratchPool, VertexCount);
+    vec2f *Texcoords = PoolAlloc<vec2f>(Context->ScratchPool, VertexCount);
+    uint16 *Indices  = PoolAlloc<uint16>(Context->ScratchPool, Quad.IndexCount);
 
     // vertices ordered from (top left) to (bottom right), line by line as an array
     for(uint32 j = 0; j < VCount1D; ++j)
@@ -1299,11 +1299,11 @@ mesh Make3DPlane(context *Context, vec2i Dimension, uint32 Subdivisions, uint32 
     uint32 IndicesSize = 6 * BaseSize * sizeof(uint32);
     uint32 TangentsSize = 4 * BaseSize * sizeof(vec4f);
 
-	vec3f *Positions = Alloc<vec3f>(Context->ScratchArena, PositionsSize);
-    vec3f *Normals = Alloc<vec3f>(Context->ScratchArena, NormalsSize);
-    vec2f *Texcoords = Alloc<vec2f>(Context->ScratchArena, TexcoordsSize);
-    vec4f *Tangents = Alloc<vec4f>(Context->ScratchArena, TangentsSize);
-    uint32 *Indices = Alloc<uint32>(Context->ScratchArena, IndicesSize);
+	vec3f *Positions = PoolAlloc<vec3f>(Context->ScratchPool, PositionsSize);
+    vec3f *Normals = PoolAlloc<vec3f>(Context->ScratchPool, NormalsSize);
+    vec2f *Texcoords = PoolAlloc<vec2f>(Context->ScratchPool, TexcoordsSize);
+    vec4f *Tangents = PoolAlloc<vec4f>(Context->ScratchPool, TangentsSize);
+    uint32 *Indices = PoolAlloc<uint32>(Context->ScratchPool, IndicesSize);
 
     vec2i SubdivDim = Dimension / Subdivisions;
     vec2f TexMax = vec2f(Dimension) / (real32)TextureRepeatCount;

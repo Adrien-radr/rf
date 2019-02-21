@@ -15,25 +15,25 @@ namespace rf {
 
 struct context_descriptor
 {
-    memory_arena	*SessionArena;
-    memory_arena	*ScratchArena;
+    mem_pool	*SessionPool;
+    mem_pool	*ScratchPool;	
 
-    real32			WindowX, WindowY;			// position (topleft origin)
-    int				WindowWidth, WindowHeight;	// size
-    bool			VSync;
-    real32			FOV;
-    real32			NearPlane, FarPlane;
-    path			ExecutableName;
-	int32			AALevel;
+    real32		WindowX, WindowY;			// position (topleft origin)
+    int			WindowWidth, WindowHeight;	// size
+    bool		VSync;
+    real32		FOV;
+    real32		NearPlane, FarPlane;
+    path		ExecutableName;
+	int32		AALevel;
 };
 
 struct context
 {
     // The context (thus the RF library) is initialized with access to
-    // both a Session long arena pool for storing rendering resources, 
+    // both a Session-long pool for storing rendering resources, 
     // as well as a Scratch pool for storing frame-long temporary data
-    memory_arena *SessionArena;
-    memory_arena *ScratchArena;
+    mem_pool	*SessionPool;
+	mem_pool	*ScratchPool;
 
     render_resources RenderResources;
 

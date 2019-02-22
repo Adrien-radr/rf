@@ -2,6 +2,11 @@
 #include "context.h"
 #include "utils.h"
 
+// by default, RF is shiped with 
+// - Font Awesome - http://fortawesome.github.com/Font-Awesome
+// - Font Roboto - https://fonts.google.com/specimen/Roboto
+// licenses and fonts are in examples/bin/data
+
 namespace rf {
 namespace ui {
 
@@ -138,6 +143,8 @@ void ParseUIConfig(context *Context, path const ConfigPath)
 		if (root)
 		{
 			ParseUIConfigRoot(&Theme, root, Context);
+
+ 			Assert(Theme.DefaultFont && Theme.ConsoleFont && Theme.AwesomeFont);
 		}
 		else
 		{

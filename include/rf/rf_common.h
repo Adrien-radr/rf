@@ -50,7 +50,7 @@ typedef char str[MAX_STRLEN];
 
 #ifdef DEBUG
 #ifndef Assert
-#define Assert(expr) if(!(expr)) { printf("Assert %s %d.\n", __FILE__, __LINE__); *(int*)0 = 0; }
+#define Assert(expr) if(!(expr)) { printf("Assert %s line %d. (\"%s\")\n", __FILE__, __LINE__, #expr); *(int*)0 = 0; }
 #endif
 #define DebugPrint(str, ...) printf(str, ##__VA_ARGS__);
 #else

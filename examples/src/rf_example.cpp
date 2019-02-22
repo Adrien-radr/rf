@@ -6,8 +6,7 @@ path ExeName = "Test RF App";
 rf::context *Context = nullptr;
 
 uint32 SessionMemSize = 512 * MB, ScratchMemSize = 64 * MB;
-void *SessionPool = nullptr, *ScratchPool = nullptr;
-rf::memory_arena SessionArena, ScratchArena;
+rf::mem_pool *SessionPool, *ScratchPool;
 
 uint32 PanelID = 0;
 vec3i PanelPos = vec3i(0, 0, 0);
@@ -18,24 +17,20 @@ uint32 Prog = 0;
 void Destroy()
 {
 	rf::ctx::Destroy(Context);
-	if (SessionPool) free(SessionPool);
-	if (ScratchPool) free(ScratchPool);
+	rf::PoolDestroy(&SessionPool);
+	rf::PoolDestroy(&ScratchPool);
 }
 
 rf::context_descriptor MakeCtxtDesc()
 {
 	// init some amount of zeroed mem for the two pools
-	SessionPool = calloc(1, SessionMemSize);
-	ScratchPool = calloc(1, ScratchMemSize);
-
-	// set the arenas to manage them
-	rf::InitArena(&SessionArena, SessionMemSize, SessionPool);
-	rf::InitArena(&ScratchArena, ScratchMemSize, ScratchPool);
+	SessionPool = rf::PoolCreate(SessionMemSize);
+	ScratchPool = rf::PoolCreate(ScratchMemSize);
 
 	// init the context descriptor and return it
 	rf::context_descriptor desc = {};
-	desc.SessionArena = &SessionArena;
-	desc.ScratchArena = &ScratchArena;
+	desc.SessionPool = SessionPool;
+	desc.ScratchPool = ScratchPool;
 	desc.WindowX = 600.f;
 	desc.WindowY = 100.f;
 	desc.WindowWidth = 800;
@@ -117,7 +112,7 @@ int main()
 		UpdateTime += Input.dTime;
 
 		// clear the scratch arena every frame
-		rf::ClearArena(&ScratchArena);
+		rf::PoolClear(ScratchPool);
 
 		// get frame inputs from context
 		rf::ctx::GetFrameInput(Context, &Input);

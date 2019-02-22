@@ -509,11 +509,12 @@ font *ResourceLoadFont(context *Context, path const Filename, uint32 FontHeight,
         return (font*)LoadedResource;
     }
 
-    font *Font = rf::PoolAlloc<font>(Context->SessionPool, 1);
+	font *Font = nullptr;
 
     void *Contents = ReadFileContents(Context, Filename, 0);
     if(Contents)
     {
+		Font = rf::PoolAlloc<font>(Context->SessionPool, 1);
         stbtt_fontinfo STBFont;
         stbtt_InitFont(&STBFont, (uint8*)Contents, 0);
 

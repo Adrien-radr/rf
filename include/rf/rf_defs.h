@@ -32,22 +32,24 @@ namespace rf {
 	- Manages free chunks in memory internally, sorted by decreasing size.
 	- A just freed chunk will try to merge itself with other free chunks if they are contiguous to avoid too much defragmentation
 
-		MEM_POOL_CHUNK_LIST_SIZE (def=256) - defines how much free chunks are stored in the pool internals. A created pool starts with 1 chunk
-			spanning the whole allocated capacity. Chunks are sorted in decreasing order of size. Chunks that fall off the CHUNK_LIST_SIZE are 
-			forgotten forever. The rationale for this is that they should be small anyway and not very useful to further allocation because of the
-			merging strategy
+		MEM_POOL_CHUNK_LIST_SIZE (def=256) - defines how much free chunks are stored in the pool internals. A created pool starts with 
+			1 chunk spanning the whole allocated capacity. Chunks are sorted in decreasing order of size. Chunks that fall off the 
+			CHUNK_LIST_SIZE are forgotten forever. The rationale for this is that they should be small anyway and not very useful to 
+			further allocation because of the merging strategy
 		MEM_POOL_ALIGNMENT (def=16) - each pool automatically aligns the memory chunks it gives to askers to that value.
 
 	# Arena (static large-block memory)
-	- Use the pool system to ask for blocks of contiguous memory (e.g. blocks of 1KB, 1MB, etc), and store those blocks internally for use by systems
+	- Use the pool system to ask for blocks of contiguous memory, and store those blocks internally for use by engine subsystems
 	- Ultimately, each subsystem of the application should make use of its own arena so that everything is delimited
 	- The goal here is easy dealloc of a whole subsystem
 	- Arenas dynamically grow block by block by asking from its linked pool. It can grow for as much as there is memory in the pool
-	- Individual allocations in an arena are not deallocable, only allocs are allowed in arenas, that will push the arena ptr forward in its own 
-	  pool-alloc'ed memory.
+	- Individual allocations in an arena are not deallocable, only allocs are allowed in arenas, that will push the arena ptr forward in 
+	  its own pool-alloc'ed memory.
+	- Can also reserve memory, where the asked capacity is allocated but the size doesnt change. Subsequent allocs will use this prealloc
+	  reserve before growing the capacity of course.
 
-		MEM_ARENA_BLOCK_SIZE (def=4KB) - Block size for arena allocation. this is the min amount of memory retrieved from the pool each time the
-			arena has to grow
+		MEM_ARENA_BLOCK_SIZE (def=4KB) - Block size for arena allocation. this is the min amount of memory retrieved from the pool each 
+			time the arena has to grow
 
 	# Buf (strechy buffer, dynamic array)
 		 From Per Vognsen's Bitwise, from Sean Barrett
@@ -129,7 +131,7 @@ inline void _MemBufCheckGrowth(T **b, uint64 Size)
 }
 
 void _ArenaGrow(mem_arena *Arena, uint64 MinSize);
-void *_ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Size);
+void *_ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Size, bool Reserve = false);
 
 // ##########################################################################
 // Public interface for RF Memory system
@@ -204,65 +206,27 @@ char *Str(mem_pool *Pool, const char *StrFmt, ...);
 void StrCat(char **StrBuf, const char *StrFmt, ...);
 
 template<typename T>
-T *ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Count)
+inline T *ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Count)
 {
 	return (T*)_ArenaAlloc(Arena, Pool, Count * sizeof(T));
+}
+
+inline void *ArenaReserve(mem_arena *Arena, mem_pool *Pool, uint64 Bytes)
+{
+	return _ArenaAlloc(Arena, Pool, Bytes, true);
+}
+
+inline void *ArenaStart(mem_arena *Arena)
+{
+	return Arena && Arena->Blocks && Arena->Blocks[0] ? Arena->Blocks[0] : nullptr;
 }
 
 // Frees the whole arena and its blocks, after that, allocing restart from the beginning
 void ArenaFree(mem_arena *Arena);
 
 // ##########################################################################
-#if 0
-
-struct memory_arena
-{
-	uint8   *BasePtr;   // Start of Arena, in bytes
-	uint64  Size;       // Used amount of memory
-	uint64  Capacity;   // Total size of arena
-};
-
-inline void InitArena(memory_arena *Arena, uint64 Capacity, void *BasePtr)
-{
-	Arena->BasePtr = (uint8*)BasePtr;
-	Arena->Capacity = Capacity;
-	Arena->Size = 0;
 }
 
-inline void ClearArena(memory_arena *Arena)
-{
-	// TODO - Do we need to wipe this to 0 each time ? Profile it to see if its
-	// a problem. It seems like best practice
-	memset(Arena->BasePtr, 0, sizeof(uint8) * Arena->Capacity);
-	Arena->Size = 0;
-}
-
-inline void *_PushArenaData(memory_arena *Arena, uint64 ElemSize, uint64 ElemCount, uint32 Align)
-{
-	void *ArenaSlot = (void*)(Arena->BasePtr + Arena->Size);
-	uint64 Remaining = Arena->Capacity - Arena->Size;
-
-	void *AlignedSlot = std::align(Align, ElemSize, ArenaSlot, Remaining);
-	if (AlignedSlot)
-	{
-		Arena->Size = (uint64)((uint8*)AlignedSlot - Arena->BasePtr) + ElemSize * ElemCount;
-		return AlignedSlot;
-	}
-	printf("ALLOC ERROR : arena <size %llu, cap %llu>, alloc <size %llu, count %llu, align $%lu>\n",
-		Arena->Size, Arena->Capacity, ElemSize, ElemCount, Align);
-	return nullptr;
-}
-#endif
-}
-#if 0
-#define POOL_OFFSET(Pool, Structure) ((uint8*)(Pool) + sizeof(Structure))
-
-template<typename T>
-T* Alloc(rf::memory_arena *Arena, uint32 Count = 1, uint32 Align = 1)
-{
-	return (T*)rf::_PushArenaData(Arena, sizeof(T), Count, Align);
-}
-#endif
 namespace rf {
 struct context;
 typedef uint8 key_state;

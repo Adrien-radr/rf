@@ -26,6 +26,8 @@ struct input_state
 	int16  Priority;
 };
 
+static mem_pool		*FramePool = nullptr;		// used memory pool for the frame (should be scratch_pool always, kept for reuse ease)
+
 static uint16       PanelCount;                 // Total number of panels ever registered
 static void         *ParentID[UI_PARENT_SIZE];  // ID stack of the parent of the current widgets, changes when a panel is begin and ended
 static int16        PanelOrder[UI_MAX_PANELS];
@@ -209,13 +211,16 @@ void ReloadShaders(context *Context)
 
 void BeginFrame(input *Input)
 {
+	FramePool = ui::Context->ScratchPool;
+	// null the array of arena ptrs, the memory they point to is erased each frame (only if above is the scratch pool ofc
+	memset(RenderCmdArena, 0, sizeof(RenderCmdArena));
+
 	// TODO -  probably this can be done with 1 'alloc' and redirections in the buffer
-	uint8 *RenderCmdBuffer = PoolAlloc<uint8>(ui::Context->ScratchPool, UI_STACK_SIZE);
+	//uint8 *RenderCmdBuffer = PoolAlloc<uint8>(ui::Context->ScratchPool, UI_STACK_SIZE);
 	uint64 panelStackSize = UI_STACK_SIZE / UI_MAX_PANELS;
 	for (uint32 p = 0; p < UI_MAX_PANELS; ++p)
 	{
-		RenderCmd[p] = RenderCmdBuffer + panelStackSize;
-		InitArena(&RenderCmdArena[p], UI_STACK_SIZE / UI_MAX_PANELS, RenderCmd[p]);
+		RenderCmd[p] = ArenaReserve(&RenderCmdArena[p], FramePool, panelStackSize);
 	}
 	memset(RenderCmdCount, 0, UI_MAX_PANELS * sizeof(uint32));
 
@@ -248,7 +253,7 @@ static bool IsRootWidget()
 
 render_info *GetParentRenderInfo(int16 ParentIdx)
 {
-	return (render_info*)(RenderCmdArena[ParentIdx].BasePtr);
+	return (render_info*)ArenaStart(&RenderCmdArena[ParentIdx]);
 }
 
 static bool PointInRectangle(const vec2f &Point, const vec2f &TopLeft, const vec2f &BottomRight)
@@ -293,9 +298,9 @@ static void FillSquare(vertex *VertData, uint16 *IdxData, int V1, int I1, vec2f 
 void MakeBorder(vec2f const &OrigTL, vec2f const &OrigBR)
 {
 	int16 const ParentPanelIdx = LastRootWidget;
-	render_info *RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-	vertex *VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], 16);
-	uint16 *IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], 24);
+	render_info *RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+	vertex *VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, 16);
+	uint16 *IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, 24);
 
 	RenderInfo->Type = WIDGET_BORDER;
 	RenderInfo->VertexCount = 16;
@@ -372,9 +377,9 @@ void MakeText(void *ID, char const *Text, theme_font FontStyle, vec2i PositionOf
 	if ((DisplayPos.y - FontScale * Font->LineGap) <= (Y - ParentPos.y - ParentSize.y + MarginOffset + BorderOffset))
 		return;
 
-	render_info *RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-	vertex *VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], VertexCount);
-	uint16 *IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], IndexCount);
+	render_info *RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+	vertex *VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, VertexCount);
+	uint16 *IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, IndexCount);
 
 
 	RenderInfo->Type = WIDGET_TEXT;
@@ -406,9 +411,9 @@ void MakeText(void *ID, char const *Text, theme_font FontStyle, vec2i PositionOf
 void MakeTitlebar(void *ID, char const *PanelTitle, vec3i Position, vec2i Size, col4f Color)
 {
 	int16 const ParentPanelIdx = LastRootWidget;
-	render_info *RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-	vertex *VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], 4);
-	uint16 *IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], 6);
+	render_info *RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+	vertex *VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, 4);
+	uint16 *IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, 6);
 
 	RenderInfo->Type = WIDGET_TITLEBAR;
 	RenderInfo->VertexCount = 4;
@@ -437,9 +442,9 @@ void MakeSlider(real32 *ID, real32 MinVal, real32 MaxVal)
 	// Maybe allow color attribute to vertices instead of having it uniform
 
 	// NOTE - Background square
-	render_info *RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-	vertex *VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], 4);
-	uint16 *IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], 6);
+	render_info *RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+	vertex *VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, 4);
+	uint16 *IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, 6);
 
 	RenderInfo->Type = WIDGET_SLIDER;
 	RenderInfo->VertexCount = 4;
@@ -462,9 +467,9 @@ void MakeSlider(real32 *ID, real32 MinVal, real32 MaxVal)
 	++(RenderCmdCount[ParentPanelIdx]);
 
 	// NOTE - Foreground slider
-	RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-	VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], 4);
-	IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], 6);
+	RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+	VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, 4);
+	IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, 6);
 
 	RenderInfo->Type = WIDGET_SLIDER;
 	RenderInfo->VertexCount = 4;
@@ -502,9 +507,9 @@ void MakeProgressbar(real32 *ID, real32 MaxVal, vec2i const &PositionOffset, vec
 	if (ParentPanelIdx == 0) return;
 
 	// NOTE - Background Square
-	render_info *RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-	vertex *VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], 4);
-	uint16 *IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], 6);
+	render_info *RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+	vertex *VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, 4);
+	uint16 *IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, 6);
 
 	RenderInfo->Type = WIDGET_PROGRESSBAR;
 	RenderInfo->VertexCount = 4;
@@ -531,9 +536,9 @@ void MakeProgressbar(real32 *ID, real32 MaxVal, vec2i const &PositionOffset, vec
 	if (ProgressWidth > 0.f)
 	{
 		// NOTE - Forground Square
-		RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-		VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], 4);
-		IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], 6);
+		RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+		VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, 4);
+		IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, 6);
 
 		RenderInfo->Type = WIDGET_PROGRESSBAR;
 		RenderInfo->VertexCount = 4;
@@ -560,9 +565,9 @@ bool MakeButton(uint32 *ID, char const *ButtonText, theme_font FontStyle, vec2i 
 
 	font *Font = GetFont(FontStyle);
 
-	render_info *RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-	vertex *VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], 4);
-	uint16 *IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], 6);
+	render_info *RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+	vertex *VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, 4);
+	uint16 *IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, 6);
 
 	RenderInfo->Type = WIDGET_BUTTON;
 	RenderInfo->VertexCount = 4;
@@ -630,9 +635,9 @@ void MakeImage(real32 *ID, uint32 TextureID, vec2f *TexOffset, vec2i const &Size
 	int16 const ParentPanelIdx = LastRootWidget;
 	if (ParentPanelIdx == 0) return;
 
-	render_info *RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-	vertex *VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], 4);
-	uint16 *IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], 6);
+	render_info *RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+	vertex *VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, 4);
+	uint16 *IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, 6);
 
 	RenderInfo->Type = WIDGET_BUTTON;
 	RenderInfo->VertexCount = 4;
@@ -685,9 +690,9 @@ void MakeResizingTriangle(vec2f const &BR)
 	int16 const ParentPanelIdx = LastRootWidget;
 	if (ParentPanelIdx == 0) return;
 
-	render_info *RenderInfo = Alloc<render_info>(&RenderCmdArena[ParentPanelIdx]);
-	vertex *VertData = Alloc<vertex>(&RenderCmdArena[ParentPanelIdx], 3);
-	uint16 *IdxData = Alloc<uint16>(&RenderCmdArena[ParentPanelIdx], 3);
+	render_info *RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[ParentPanelIdx], FramePool, 1);
+	vertex *VertData = ArenaAlloc<vertex>(&RenderCmdArena[ParentPanelIdx], FramePool, 3);
+	uint16 *IdxData = ArenaAlloc<uint16>(&RenderCmdArena[ParentPanelIdx], FramePool, 3);
 
 	RenderInfo->Type = WIDGET_OTHER;
 	RenderInfo->VertexCount = 3;
@@ -737,9 +742,9 @@ void BeginPanel(uint32 *ID, char const *PanelTitle, vec3i *Position, vec2i *Size
 		VCount = ICount = 0;
 	}
 
-	render_info *RenderInfo = Alloc<render_info>(&RenderCmdArena[PanelIdx]);
-	vertex *VertData = Alloc<vertex>(&RenderCmdArena[PanelIdx], VCount);
-	uint16 *IdxData = Alloc<uint16>(&RenderCmdArena[PanelIdx], ICount);
+	render_info *RenderInfo = ArenaAlloc<render_info>(&RenderCmdArena[PanelIdx], FramePool, 1);
+	vertex *VertData = ArenaAlloc<vertex>(&RenderCmdArena[PanelIdx], FramePool, VCount);
+	uint16 *IdxData = ArenaAlloc<uint16>(&RenderCmdArena[PanelIdx], FramePool, ICount);
 
 	RenderInfo->Type = WIDGET_PANEL;
 	RenderInfo->VertexCount = VCount;
@@ -875,13 +880,16 @@ static void *RenderCmdOffset(uint8 *CmdList, size_t *OffsetAccum, size_t Size)
 void Draw()
 {
 	Update();
-
+	
 	uint32 CurrProgram = 0;
 
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(VAO);
 	for (int p = 0; p < PanelCount; ++p)
 	{
+		// we should have only one big allocated block for each panel, if we have more we are above UI_STACK_SIZE/UI_MAX_PANELS limit
+		Assert(BufSize(RenderCmdArena[p].Blocks) == 1);
+
 		int16 OrdPanelIdx = RenderOrder[p];
 		uint8 *Cmd = (uint8*)RenderCmd[OrdPanelIdx];
 		for (uint32 i = 0; i < RenderCmdCount[OrdPanelIdx]; ++i)

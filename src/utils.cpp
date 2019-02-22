@@ -303,7 +303,7 @@ void _ArenaGrow(mem_arena *Arena, uint64 MinSize)
 	BufPush(Arena->Blocks, Arena->Ptr);
 }
 
-void *_ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Size)
+void *_ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Size, bool Reserve)
 {
 	if (Size > (uint64)(Arena->BlockEnd - Arena->Ptr))
 	{
@@ -311,7 +311,10 @@ void *_ArenaAlloc(mem_arena *Arena, mem_pool *Pool, uint64 Size)
 		_ArenaGrow(Arena, Size);
 	}
 	void *ptr = Arena->Ptr;
-	Arena->Ptr = Arena->Ptr + Size;
+	if (!Reserve)
+	{
+		Arena->Ptr = Arena->Ptr + Size;
+	}
 	return ptr;
 }
 

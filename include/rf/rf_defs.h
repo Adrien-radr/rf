@@ -120,14 +120,18 @@ void _MemPoolPrintStatus(mem_pool *Pool);
 
 void *_MemBufGrow(mem_pool *Pool, void *Ptr, uint64 Count, uint64 ElemSize);
 
+// Returns true if there was a memory reallocation and move of the data
 template<typename T>
-inline void _MemBufCheckGrowth(T **b, uint64 Size)
+inline bool _MemBufCheckGrowth(T **b, uint64 Size)
 {
 	uint64 cap = (*b) ? mem_buf__hdr(*b)->Capacity : 0;
 	if (Size > cap)
 	{
+		T *oldBuf = *b;
 		*b = (T*)_MemBufGrow(mem_buf__hdr(*b)->Pool, *b, Size, sizeof(T));
+		return oldBuf != *b;
 	}
+	return false;
 }
 
 void _ArenaGrow(mem_arena *Arena, uint64 MinSize);
@@ -192,11 +196,22 @@ inline T *Buf(mem_pool *Pool, uint64 Capacity = 0)
 	return (T*)_MemBufGrow(Pool, nullptr, Capacity, sizeof(T));
 }
 
+// Return true if there was a reallocation
 template<typename T>
 inline void BufPush(T *b, T v)
 {
-	_MemBufCheckGrowth(&b, BufSize(b) + 1);
+	bool realloced = _MemBufCheckGrowth(&b, BufSize(b) + 1);
 	b[mem_buf__hdr(b)->Size++] = v;
+	return realloced;
+}
+
+// Reserve the buffer so that MinCapacity is available in total
+// Current size of buffer doesn't matter here, and the MinCapacity is not a capacity OVER the current size, its total
+// Returns true if the buffer was resized (ie. moved in memory)
+template<typename T>
+inline bool BufReserve(T *b, uint64 MinCapacity)
+{
+	return _MemBufCheckGrowth(&b, MinCapacity);
 }
 
 // create a new mem_buf string from nothing
@@ -224,6 +239,100 @@ inline void *ArenaStart(mem_arena *Arena)
 // Frees the whole arena and its blocks, after that, allocing restart from the beginning
 void ArenaFree(mem_arena *Arena);
 
+#if 0
+uint32 fvn_hash(const char* s)
+{
+	uint32 hash = 2166136261; // offset basis (32 bits)
+	for (const char* ptr = s; *ptr != '\0'; ptr++)
+	{
+		hash ^= *ptr;       // xor
+		hash *= 16777619;   // prime (32 bits)
+	}
+	return hash;
+}
+
+uint64 hash_uint64(uint64 x)
+{
+	x *= 0xff51afd7ed558ccd;
+	x ^= x >> 32;
+	return x;
+}
+
+// We need to handle 0-index.
+// But still use uint64.
+// So every key-index i returned to a caller should be (i-1), but internally using raw i, with i=0 being a free slot
+struct hash_map
+{
+	uint64		*Keys;
+	uint64		*Values;
+	mem_pool	*Pool;
+};
+
+hash_map MapCreate(mem_pool *Pool)
+{
+	Assert(Pool);
+	hash_map m = {
+		Buf<uint64>(Pool, 128),
+		Buf<uint64>(Pool, 128),
+		Pool
+	};
+
+	memset(m.Keys, 0, 128 * sizeof(uint64));
+	memset(m.Values, 0, 128 * sizeof(uint64));
+	return m;
+}
+
+void MapDestroy(hash_map *Map)
+{
+	Assert(Map);
+	BufFree(Map->Keys);
+	BufFree(Map->Values);
+}
+
+void _MapGrow(hash_map *Map)
+{
+	Assert(Map && Map->Pool);
+	uint64 newCapacity = 2 * BufCapacity(Map->Keys);
+	if (BufReserve(Map, newCapacity))
+	{ // if there is a memory move during realloc, update the map
+	}
+}
+
+uint64 MapGet(hash_map *Map, uint64 Key)
+{
+	Assert(Map && Key != ((uint64)-1));
+	if (Key >= BufSize(Map->Keys))
+		return (uint64)-1;
+}
+
+void MapAdd(hash_map *Map, uint64 Key, uint64 Value)
+{
+	Assert(Map && Key != ((uint64)-1));
+	if (2 * BufSize(Map->Keys) >= BufCapacity(Map->Keys))
+	{
+		_MapGrow(Map);
+	}
+	uint64 i = hash_uint64(Key);
+	uint64 _key = Key + 1;
+	for (;;)
+	{
+		i &= BufCapacity(Map->Keys) - 1;
+		if (!Map->Keys[i])
+		{ // insert in empty slot
+			Map->Keys[i] = _key;
+			Map->Values[i] = Value;
+			return;
+		}
+		else if (Map->Keys[i] == _key)
+		{ // exists already, change the value in slot
+			Map->Values[i] = Value;
+			return;
+		}
+		++i;
+	}
+}
+
+#endif
 // ##########################################################################
 }
 

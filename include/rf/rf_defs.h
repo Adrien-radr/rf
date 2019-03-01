@@ -106,6 +106,7 @@ struct mem_arena
 	mem_arena() : Ptr(nullptr), BlockEnd(nullptr), Pool(nullptr), Blocks(nullptr) {}
 };
 
+// hash map u64 -> u64, with linear probing
 // Every key-index i returned to a caller should be (i-1), but internally using raw i, with i=0 being a free slot
 struct hash_map
 {

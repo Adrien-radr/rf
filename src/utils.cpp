@@ -411,6 +411,7 @@ void MapAdd(hash_map *Map, uint64 Key, uint64 Value)
 	}
 	uint64 i = hash_uint64(Key);
 	uint64 key = Key + 1;
+	// map is always at least 2x the capacity of its max size, so this loop finishes always
 	for (;;)
 	{
 		i &= Map->Capacity - 1;

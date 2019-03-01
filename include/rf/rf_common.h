@@ -81,6 +81,16 @@ inline uint64 AlignUp(uint64 Size, uint64 Align)
 	return Size + (((~Size) + 1) & (Align - 1));
 }
 
+inline bool IsPow2(uint32 x)
+{
+	return x && !(x & (x - 1));
+}
+
+inline bool IsPow2(uint64 x)
+{
+	return x && !(x & (x - 1));
+}
+
 inline uint32 NextPow2(uint32 x)
 {
 	x--;
@@ -106,12 +116,36 @@ inline uint64 NextPow2(uint64 x)
 	return x;
 }
 
-// multiplicative hash finalization function, to avoid as much as possible clusting (for open addressing hmaps)
+// multiplicative hash mix function, to avoid as much as possible clusting (for open addressing hmaps)
+// from fnv-1a
 inline uint64 hash_uint64(uint64 x)
 {
+#if 1
+	static uint64 offset = 14695981039346656037;
+	static uint64 prime = 1099511628211;
+	x ^= offset;
+	x *= prime;
+#else
+	// this is from per vognsen, but i couldnt find the source or why. it seems a bit related to murmurhash3
 	x *= 0xff51afd7ed558ccd;
 	x ^= x >> 32;
+#endif
 	return x;
+}
+
+inline uint64 hash_bytes(const char *bytes, uint64 len)
+{
+	static uint64 offset = 14695981039346656037;
+	static uint64 prime = 1099511628211;
+
+	uint64 hash = offset;
+	for (uint64 i = 0; i < len; ++i)
+	{
+		hash ^= bytes[i];
+		hash *= prime;
+	}
+
+	return hash;
 }
 
 #endif

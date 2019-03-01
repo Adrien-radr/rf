@@ -163,7 +163,7 @@ inline mem_pool *PoolCreate(uint64 PoolCapacity)
 	return pool;
 }
 
-inline void PoolDestroy(mem_pool **Pool)
+inline void PoolFree(mem_pool **Pool)
 {
 	free((*Pool)->Buffer);
 	free(*Pool);
@@ -254,12 +254,67 @@ inline void *ArenaStart(mem_arena *Arena)
 void ArenaFree(mem_arena *Arena);
 
 
-hash_map	MapCreate(mem_pool *Pool, uint64 MinCapacity = 0);
-void		MapDestroy(hash_map *Map);
+hash_map	Map(mem_pool *Pool, uint64 MinCapacity = 0);
+void		MapFree(hash_map *Map);
 uint64		MapGet(hash_map *Map, uint64 Key);
-void		MapAdd(hash_map *Map, uint64 Key, uint64 Value);
+// Returns true if there was a realloc (always realloc to 2x the size to stay on pow2)
+bool		MapAdd(hash_map *Map, uint64 Key, uint64 Value);
 
 // ##########################################################################
+#if 0 // WIP
+// Use a hash_map to map between key strings and pointer values
+// the string keys are stored contiguously in KeyStorage
+// the Map indexes KeyIdx and Values
+// KeyIdx maps between the hash index and the string index in storage
+struct map_store
+{
+	hash_map	HMap;
+	uint8		*KeyStorage;
+	uint64		*KeyIdx;
+	void		*Values;
+};
+
+map_store MapStore(mem_pool *Pool, uint64 Capacity = 0)
+{
+	Assert(Pool);
+	uint64 size = NextPow2(Max(Capacity, 32));
+	hash_map hmap = Map(Pool, size);
+	map_store store = {
+		hmap,
+		PoolAlloc<uint8>(Pool, size * MAX_PATH),
+		PoolAlloc<uint64>(Pool, size),
+		PoolAlloc<void*>(Pool, size)
+	};
+
+	return store;
+}
+
+void MapStoreFree(map_store *MStore)
+{
+	Assert(MStore);
+	mem_pool *refPool = MStore->HMap.Pool;
+	MapFree(&MStore->HMap);
+	PoolFree(refPool, MStore->KeyStorage);
+	PoolFree(refPool, MStore->KeyIdx);
+	PoolFree(refPool, MStore->Values);
+	MStore->KeyStorage = nullptr;
+	MStore->KeyIdx = nullptr;
+	MStore->Values = nullptr;
+}
+
+uint64 MapStoreAdd(map_store *MStore, const char *Key, void *Value)
+{
+	Assert(MStore && MStore->KeyIdx && Key && Value);
+	// get a uint64 idx to store the key and value at
+	// store the input string in the string storage, adding a trailing 0 char for termination
+	// link the keyIdx to the string in storage
+	// add the value at the same idx
+
+	// if the key is already used with the same string, replace the value only
+	// if the key isnt use, add both
+	return 0;
+}
+#endif
 }
 
 namespace rf {

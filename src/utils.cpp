@@ -330,7 +330,7 @@ void ArenaFree(mem_arena *Arena)
 	Arena->Ptr = Arena->BlockEnd = nullptr;
 }
 
-hash_map MapCreate(mem_pool *Pool, uint64 MinCapacity)
+hash_map Map(mem_pool *Pool, uint64 MinCapacity)
 {
 	Assert(Pool);
 	uint64 size = NextPow2(Max(MinCapacity, 32));
@@ -348,51 +348,51 @@ hash_map MapCreate(mem_pool *Pool, uint64 MinCapacity)
 	return m;
 }
 
-void MapDestroy(hash_map *Map)
+void MapFree(hash_map *HMap)
 {
-	Assert(Map && Map->Pool);
-	PoolFree(Map->Pool, Map->Keys);
-	PoolFree(Map->Pool, Map->Values);
-	Map->Capacity = 0;
-	Map->Size = 0;
+	Assert(HMap && HMap->Pool);
+	PoolFree(HMap->Pool, HMap->Keys);
+	PoolFree(HMap->Pool, HMap->Values);
+	HMap->Capacity = 0;
+	HMap->Size = 0;
 }
 
-void _MapGrow(hash_map *Map)
+void _MapGrow(hash_map *HMap)
 {
-	Assert(Map && Map->Pool);
-	uint64 newCapacity = 2 * Map->Capacity;
+	Assert(HMap && HMap->Pool);
+	uint64 newCapacity = 2 * HMap->Capacity;
 
 	// realloc the map
-	hash_map newMap = MapCreate(Map->Pool, newCapacity);
+	hash_map newMap = Map(HMap->Pool, newCapacity);
 
 	// insert all from old to new map
-	for (uint64 i = 0; i < Map->Capacity; ++i)
+	for (uint64 i = 0; i < HMap->Capacity; ++i)
 	{
-		if (Map->Keys[i])
-			MapAdd(&newMap, Map->Keys[i] - 1, Map->Values[i]);
+		if (HMap->Keys[i])
+			MapAdd(&newMap, HMap->Keys[i] - 1, HMap->Values[i]);
 	}
 
 	// replace keys/values arrays from given map with new ones
-	MapDestroy(Map);
-	*Map = newMap;
+	MapFree(HMap);
+	*HMap = newMap;
 }
 
-uint64 MapGet(hash_map *Map, uint64 Key)
+uint64 MapGet(hash_map *HMap, uint64 Key)
 {
-	Assert(Map && Key != ((uint64)-1));
-	if (Key >= Map->Capacity || Key == (uint64)-1)
+	Assert(HMap && Key != ((uint64)-1));
+	if (Key >= HMap->Capacity || Key == (uint64)-1)
 		return (uint64)-1;
 
 	uint64 keyHash = hash_uint64(Key);
 	uint64 searchKey = Key + 1;
 	for (;;)
 	{
-		keyHash &= Map->Capacity - 1;
-		if (Map->Keys[keyHash] == searchKey)
+		keyHash &= HMap->Capacity - 1;
+		if (HMap->Keys[keyHash] == searchKey)
 		{
-			return Map->Values[keyHash];
+			return HMap->Values[keyHash];
 		}
-		else if (!Map->Keys[keyHash])
+		else if (!HMap->Keys[keyHash])
 		{
 			return (uint64)-1;
 		}
@@ -400,32 +400,34 @@ uint64 MapGet(hash_map *Map, uint64 Key)
 	}
 }
 
-void MapAdd(hash_map *Map, uint64 Key, uint64 Value)
+bool MapAdd(hash_map *HMap, uint64 Key, uint64 Value)
 {
-	Assert(Map && Key != ((uint64)-1));
-	uint64 bsize = Map->Size;
-	uint64 bcap = Map->Capacity;
-	if (2 * Map->Size >= Map->Capacity)
+	Assert(HMap && Key != ((uint64)-1));
+	uint64 bsize = HMap->Size;
+	uint64 bcap = HMap->Capacity;
+	bool resized = false;
+	if (2 * HMap->Size >= HMap->Capacity)
 	{
-		_MapGrow(Map);
+		_MapGrow(HMap);
+		resized = true;
 	}
 	uint64 i = hash_uint64(Key);
 	uint64 key = Key + 1;
 	// map is always at least 2x the capacity of its max size, so this loop finishes always
 	for (;;)
 	{
-		i &= Map->Capacity - 1;
-		if (!Map->Keys[i])
+		i &= HMap->Capacity - 1;
+		if (!HMap->Keys[i])
 		{ // insert in empty slot
-			Map->Keys[i] = key;
-			Map->Values[i] = Value;
-			Map->Size++;
-			return;
+			HMap->Keys[i] = key;
+			HMap->Values[i] = Value;
+			HMap->Size++;
+			return resized;
 		}
-		else if (Map->Keys[i] == key)
+		else if (HMap->Keys[i] == key)
 		{ // exists already, change the value in slot
-			Map->Values[i] = Value;
-			return;
+			HMap->Values[i] = Value;
+			return resized;
 		}
 		++i;
 	}

@@ -330,6 +330,106 @@ void ArenaFree(mem_arena *Arena)
 	Arena->Ptr = Arena->BlockEnd = nullptr;
 }
 
+hash_map MapCreate(mem_pool *Pool, uint64 MinCapacity)
+{
+	Assert(Pool);
+	uint64 size = NextPow2(Max(MinCapacity, 32));
+
+	hash_map m = {
+		PoolAlloc<uint64>(Pool, size),
+		PoolAlloc<uint64>(Pool, size),
+		0,
+		size,
+		Pool
+	};
+
+	memset(m.Keys, 0, size * sizeof(uint64));
+	memset(m.Values, 0, size * sizeof(uint64));
+	return m;
+}
+
+void MapDestroy(hash_map *Map)
+{
+	Assert(Map && Map->Pool);
+	PoolFree(Map->Pool, Map->Keys);
+	PoolFree(Map->Pool, Map->Values);
+	Map->Capacity = 0;
+	Map->Size = 0;
+}
+
+void _MapGrow(hash_map *Map)
+{
+	Assert(Map && Map->Pool);
+	uint64 newCapacity = 2 * Map->Capacity;
+
+	// realloc the map
+	hash_map newMap = MapCreate(Map->Pool, newCapacity);
+
+	// insert all from old to new map
+	for (uint64 i = 0; i < Map->Capacity; ++i)
+	{
+		if (Map->Keys[i])
+			MapAdd(&newMap, Map->Keys[i] - 1, Map->Values[i]);
+	}
+
+	// replace keys/values arrays from given map with new ones
+	MapDestroy(Map);
+	*Map = newMap;
+}
+
+uint64 MapGet(hash_map *Map, uint64 Key)
+{
+	Assert(Map && Key != ((uint64)-1));
+	if (Key >= Map->Capacity || Key == (uint64)-1)
+		return (uint64)-1;
+
+	uint64 keyHash = hash_uint64(Key);
+	uint64 searchKey = Key + 1;
+	for (;;)
+	{
+		keyHash &= Map->Capacity - 1;
+		if (Map->Keys[keyHash] == searchKey)
+		{
+			return Map->Values[keyHash];
+		}
+		else if (!Map->Keys[keyHash])
+		{
+			return (uint64)-1;
+		}
+		++keyHash;
+	}
+}
+
+void MapAdd(hash_map *Map, uint64 Key, uint64 Value)
+{
+	Assert(Map && Key != ((uint64)-1));
+	uint64 bsize = Map->Size;
+	uint64 bcap = Map->Capacity;
+	if (2 * Map->Size >= Map->Capacity)
+	{
+		_MapGrow(Map);
+	}
+	uint64 i = hash_uint64(Key);
+	uint64 key = Key + 1;
+	for (;;)
+	{
+		i &= Map->Capacity - 1;
+		if (!Map->Keys[i])
+		{ // insert in empty slot
+			Map->Keys[i] = key;
+			Map->Values[i] = Value;
+			Map->Size++;
+			return;
+		}
+		else if (Map->Keys[i] == key)
+		{ // exists already, change the value in slot
+			Map->Values[i] = Value;
+			return;
+		}
+		++i;
+	}
+}
+
 void ConcatStrings(path Dst, path const Str1, path const Str2)
 {
     strncpy(Dst, Str1, MAX_PATH);

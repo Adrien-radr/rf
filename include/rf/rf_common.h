@@ -81,4 +81,37 @@ inline uint64 AlignUp(uint64 Size, uint64 Align)
 	return Size + (((~Size) + 1) & (Align - 1));
 }
 
+inline uint32 NextPow2(uint32 x)
+{
+	x--;
+	x |= x >> 1;
+	x |= x >> 2;
+	x |= x >> 4;
+	x |= x >> 8;
+	x |= x >> 16;
+	x++;
+	return x;
+}
+
+inline uint64 NextPow2(uint64 x)
+{
+	x--;
+	x |= x >> 1;
+	x |= x >> 2;
+	x |= x >> 4;
+	x |= x >> 8;
+	x |= x >> 16;
+	x |= x >> 32;
+	x++;
+	return x;
+}
+
+// multiplicative hash finalization function, to avoid as much as possible clusting (for open addressing hmaps)
+inline uint64 hash_uint64(uint64 x)
+{
+	x *= 0xff51afd7ed558ccd;
+	x ^= x >> 32;
+	return x;
+}
+
 #endif

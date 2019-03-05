@@ -198,34 +198,44 @@ inline void PoolFree(mem_pool *Pool, T *Ptr)
 // return occupancy of the given pool (percentage of occupied space)
 real32 PoolOccupancy(mem_pool *Pool);
 
-#define BufSize(b)		((b) ? mem_buf__hdr(b)->Size : 0)
-#define BufCapacity(b)	((b) ? mem_buf__hdr(b)->Capacity : 0)
-#define BufEnd(b)		((b) + BufSize(b))
-#define BufClear(b)		((b) ? mem_buf__hdr(b)->Size = 0 : 0)
-#define BufFree(b)		((b) ? (_MemPoolFree(mem_buf__hdr(b)->Pool, mem_buf__hdr(b)), (b) = nullptr) : 0)
+template<typename T>
+inline T*		Buf(mem_pool *Pool, uint64 Capacity = 0) { return (T*)_MemBufGrow(Pool, nullptr, Capacity, sizeof(T)); }
 
 template<typename T>
-inline T *Buf(mem_pool *Pool, uint64 Capacity = 0)
-{
-	return (T*)_MemBufGrow(Pool, nullptr, Capacity, sizeof(T));
-}
+inline void		BufFree(T *&b) { if (b) { _MemPoolFree(mem_buf__hdr(b)->Pool, mem_buf__hdr(b)); b = nullptr; } }
+
+template<typename T>
+inline void		BufClear(T *b) { if (b) { mem_buf__hdr(b)->Size = 0; } }
+
+template<typename T>
+inline uint64	BufSize(T *b) { if (b) { return mem_buf__hdr(b)->Size; } return 0; }
+
+template<typename T>
+inline uint64	BufCapacity(T *b) { if (b) { return mem_buf__hdr(b)->Capacity; } return 0; }
+
+template<typename T>
+inline T*		BufEnd(T *b) { if (b) { return b + BufSize(b); } return nullptr; }
+
+// Reserve the buffer so that MinCapacity is available in total
+// Current size of buffer doesn't matter here, and the MinCapacity is not a capacity OVER the current size, its total
+// Returns true if the buffer was resized (ie. moved in memory)
+template<typename T>
+inline bool		BufReserve(T *b, uint64 MinCapacity) { return _MemBufCheckGrowth(&b, MinCapacity); }
 
 // Return true if there was a reallocation
 template<typename T>
-inline bool BufPush(T *b, T v)
+inline bool		BufPush(T *b, T v)
 {
 	bool realloced = _MemBufCheckGrowth(&b, BufSize(b) + 1);
 	b[mem_buf__hdr(b)->Size++] = v;
 	return realloced;
 }
 
-// Reserve the buffer so that MinCapacity is available in total
-// Current size of buffer doesn't matter here, and the MinCapacity is not a capacity OVER the current size, its total
-// Returns true if the buffer was resized (ie. moved in memory)
-template<typename T>
-inline bool BufReserve(T *b, uint64 MinCapacity)
+
+inline bool BufPushBytes(uint8 *b, uint8 *v, uint64 vLen)
 {
-	return _MemBufCheckGrowth(&b, MinCapacity);
+	//bool realloced = _MemBufCheckGrowth(&b)
+	return false;
 }
 
 // create a new mem_buf string from nothing
@@ -259,6 +269,10 @@ void		MapFree(hash_map *Map);
 uint64		MapGet(hash_map *Map, uint64 Key);
 // Returns true if there was a realloc (always realloc to 2x the size to stay on pow2)
 bool		MapAdd(hash_map *Map, uint64 Key, uint64 Value);
+
+// string key versions, check utils.cpp for more info
+bool		MapAddFromBytes(hash_map *HMap, uint64 Key, uint64 Value, const char *CmpStrs);
+uint64		MapGetFromBytes(hash_map *HMap, uint64 Key, const char *CmpStrs);
 
 // ##########################################################################
 #if 0 // WIP

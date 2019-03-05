@@ -264,14 +264,14 @@ void StrCat(char **StrBuf, const char *StrFmt, ...)
 	va_list args;
 	va_start(args, StrFmt);
 	uint64 remainingCap = BufCapacity(*StrBuf) - BufSize(*StrBuf);
-	uint64 strLen = vsnprintf(BufEnd(*StrBuf), remainingCap, StrFmt, args) + 1;
+	uint64 strLen = vsnprintf(rf::BufEnd(*StrBuf), remainingCap, StrFmt, args) + 1;
 	va_end(args);
 	if (strLen > remainingCap)
 	{
 		_MemBufCheckGrowth(StrBuf, BufSize(*StrBuf) + strLen);
 		va_start(args, StrFmt);
 		remainingCap = BufCapacity(*StrBuf) - BufSize(*StrBuf);
-		strLen = vsnprintf(BufEnd(*StrBuf), remainingCap, StrFmt, args) + 1;
+		strLen = vsnprintf(rf::BufEnd(*StrBuf), remainingCap, StrFmt, args) + 1;
 		va_end(args);
 	}
 	mem_buf__hdr(*StrBuf)->Size += strLen - 1;
@@ -411,25 +411,102 @@ bool MapAdd(hash_map *HMap, uint64 Key, uint64 Value)
 		_MapGrow(HMap);
 		resized = true;
 	}
-	uint64 i = hash_uint64(Key);
+	uint64 keyHash = hash_uint64(Key);
 	uint64 key = Key + 1;
 	// map is always at least 2x the capacity of its max size, so this loop finishes always
 	for (;;)
 	{
-		i &= HMap->Capacity - 1;
-		if (!HMap->Keys[i])
+		keyHash &= HMap->Capacity - 1;
+		if (!HMap->Keys[keyHash])
 		{ // insert in empty slot
-			HMap->Keys[i] = key;
-			HMap->Values[i] = Value;
+			HMap->Keys[keyHash] = key;
+			HMap->Values[keyHash] = Value;
 			HMap->Size++;
 			return resized;
 		}
-		else if (HMap->Keys[i] == key)
+		else if (HMap->Keys[keyHash] == key)
 		{ // exists already, change the value in slot
-			HMap->Values[i] = Value;
+			HMap->Values[keyHash] = Value;
 			return resized;
 		}
-		++i;
+		++keyHash;
+	}
+}
+
+// Maps an input key to a value, depending on the hash of the given byte array (string)
+// The stored keys are indices in the passed CmpStrs array of strings
+// This design allows using the u64 hash_map with string-based keys, where the keys themselves are stored in
+// the accompanying CmpStrs flat array
+// Essentially string-key index/ptr-value hash map with linear probing of strings for collisions
+// Use with care. An implementation using this function correctly is the map_store
+bool MapAddFromBytes(hash_map *HMap, uint64 Key, uint64 Value, const char *CmpStrs)
+{
+	Assert(HMap && CmpStrs && Key != ((uint64)-1));
+	uint64 bsize = HMap->Size;
+	uint64 bcap = HMap->Capacity;
+	bool resized = false;
+	if (2 * HMap->Size >= HMap->Capacity)
+	{
+		_MapGrow(HMap);
+		resized = true;
+	}
+	const char *strKey = CmpStrs + Key;
+	uint64 strKeyLen = strlen(strKey);
+	uint64 keyHash = hash_bytes(strKey, strKeyLen);
+	uint64 key = Key + 1;
+	// map is always at least 2x the capacity of its max size, so this loop finishes always
+	for (;;)
+	{
+		keyHash &= HMap->Capacity - 1;
+		if (!HMap->Keys[keyHash])
+		{ // insert in empty slot
+			HMap->Keys[keyHash] = key;
+			HMap->Values[keyHash] = Value;
+			HMap->Size++;
+			return resized;
+		}
+		else
+		{
+			// if something is present, compare strings for match with key str
+			// str keys in CmpStrs are null terminated by design
+			uint64 cmpStrLen = strlen(CmpStrs + HMap->Keys[keyHash] - 1);
+			if (cmpStrLen == strKeyLen && !strncmp(CmpStrs + HMap->Keys[keyHash] - 1, strKey, strKeyLen))
+			{
+				HMap->Values[keyHash] = Value;
+				return resized;
+			}
+		}
+		++keyHash;
+	}
+}
+
+// Same as above in design, but for the MapGet operation
+uint64 MapGetFromBytes(hash_map *HMap, uint64 Key, const char *CmpStrs)
+{
+	Assert(HMap && CmpStrs);
+	if (Key >= HMap->Capacity || Key == (uint64)-1)
+		return (uint64)-1;
+
+	const char *strKey = CmpStrs + Key;
+	uint64 strKeyLen = strlen(strKey);
+	uint64 keyHash = hash_bytes(strKey, strKeyLen);
+	uint64 searchKey = Key + 1;
+	for (;;)
+	{
+		keyHash &= HMap->Capacity - 1;
+		if (!HMap->Keys[keyHash])
+		{
+			return (uint64)-1;
+		}
+		else
+		{
+			uint64 cmpStrLen = strlen(CmpStrs + HMap->Keys[keyHash] - 1);
+			if (cmpStrLen == strKeyLen && !strncmp(CmpStrs + HMap->Keys[keyHash] - 1, strKey, strKeyLen))
+			{
+				return HMap->Values[keyHash];
+			}
+		}
+		++keyHash;
 	}
 }
 

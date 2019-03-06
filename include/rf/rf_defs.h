@@ -117,6 +117,14 @@ struct hash_map
 	mem_pool	*Pool;
 };
 
+// Use a hash_map to map between key strings and pointer values
+// the string keys are stored contiguously in KeyStorage
+struct map_store
+{
+	hash_map	HMap;
+	uint8		*KeyStorage;
+};
+
 #define mem_addr__hdr(a) ((mem_addr*)((uint8*)(a) - offsetof(mem_addr, Ptr)))
 #define mem_buf__hdr(b) ((mem_buf*)((uint8*)(b) - offsetof(mem_buf, BufferData)))
 inline uint64 mem_chunk__end(mem_chunk *chunk) { return chunk->Loc + chunk->Size; }
@@ -232,10 +240,12 @@ inline bool		BufPush(T *&b, T v)
 }
 
 
-inline bool BufPushBytes(uint8 *b, uint8 *v, uint64 vLen)
+inline bool BufPushBytes(uint8 *b, const uint8 *v, uint64 vLen)
 {
-	//bool realloced = _MemBufCheckGrowth(&b)
-	return false;
+	bool realloced = _MemBufCheckGrowth(b, vLen);
+	memcpy(b + BufSize(b), v, vLen);
+	mem_buf__hdr(b)->Size += vLen;
+	return realloced;
 }
 
 // create a new mem_buf string from nothing
@@ -272,63 +282,14 @@ bool		MapAdd(hash_map *Map, uint64 Key, uint64 Value);
 
 // string key versions, check utils.cpp for more info
 bool		MapAddFromBytes(hash_map *HMap, uint64 Key, uint64 Value, const char *CmpStrs);
-uint64		MapGetFromBytes(hash_map *HMap, uint64 Key, const char *CmpStrs);
+uint64		MapGetFromBytes(hash_map *HMap, const char *Key, const char *CmpStrs, uint64 *FoundIdx = nullptr);
+
+map_store	MapStore(mem_pool *Pool, uint64 Capacity = 0);
+void		MapStoreFree(map_store *MStore);
+bool		MapStoreAdd(map_store *MStore, const char *Key, void *Value);
+void		*MapStoreGet(map_store *MStore, const char *Key);
 
 // ##########################################################################
-#if 0 // WIP
-// Use a hash_map to map between key strings and pointer values
-// the string keys are stored contiguously in KeyStorage
-// the Map indexes KeyIdx and Values
-// KeyIdx maps between the hash index and the string index in storage
-struct map_store
-{
-	hash_map	HMap;
-	uint8		*KeyStorage;
-	uint64		*KeyIdx;
-	void		*Values;
-};
-
-map_store MapStore(mem_pool *Pool, uint64 Capacity = 0)
-{
-	Assert(Pool);
-	uint64 size = NextPow2(Max(Capacity, 32));
-	hash_map hmap = Map(Pool, size);
-	map_store store = {
-		hmap,
-		PoolAlloc<uint8>(Pool, size * MAX_PATH),
-		PoolAlloc<uint64>(Pool, size),
-		PoolAlloc<void*>(Pool, size)
-	};
-
-	return store;
-}
-
-void MapStoreFree(map_store *MStore)
-{
-	Assert(MStore);
-	mem_pool *refPool = MStore->HMap.Pool;
-	MapFree(&MStore->HMap);
-	PoolFree(refPool, MStore->KeyStorage);
-	PoolFree(refPool, MStore->KeyIdx);
-	PoolFree(refPool, MStore->Values);
-	MStore->KeyStorage = nullptr;
-	MStore->KeyIdx = nullptr;
-	MStore->Values = nullptr;
-}
-
-uint64 MapStoreAdd(map_store *MStore, const char *Key, void *Value)
-{
-	Assert(MStore && MStore->KeyIdx && Key && Value);
-	// get a uint64 idx to store the key and value at
-	// store the input string in the string storage, adding a trailing 0 char for termination
-	// link the keyIdx to the string in storage
-	// add the value at the same idx
-
-	// if the key is already used with the same string, replace the value only
-	// if the key isnt use, add both
-	return 0;
-}
-#endif
 }
 
 namespace rf {

@@ -482,16 +482,13 @@ bool MapAddFromBytes(hash_map *HMap, uint64 Key, uint64 Value, const char *CmpSt
 }
 
 // Same as above in design, but for the MapGet operation
-uint64 MapGetFromBytes(hash_map *HMap, uint64 Key, const char *CmpStrs)
+// If FoundIdx is given, gets filled with the hash index of the found key/value pair (if found at all)
+uint64 MapGetFromBytes(hash_map *HMap, const char *Key, const char *CmpStrs, uint64 *FoundIdx)
 {
-	Assert(HMap && CmpStrs);
-	if (Key >= HMap->Capacity || Key == (uint64)-1)
-		return (uint64)-1;
+	Assert(HMap && Key && CmpStrs);
 
-	const char *strKey = CmpStrs + Key;
-	uint64 strKeyLen = strlen(strKey);
-	uint64 keyHash = hash_bytes(strKey, strKeyLen);
-	uint64 searchKey = Key + 1;
+	uint64 strKeyLen = strlen(Key);
+	uint64 keyHash = hash_bytes(Key, strKeyLen);
 	for (;;)
 	{
 		keyHash &= HMap->Capacity - 1;
@@ -502,13 +499,70 @@ uint64 MapGetFromBytes(hash_map *HMap, uint64 Key, const char *CmpStrs)
 		else
 		{
 			uint64 cmpStrLen = strlen(CmpStrs + HMap->Keys[keyHash] - 1);
-			if (cmpStrLen == strKeyLen && !strncmp(CmpStrs + HMap->Keys[keyHash] - 1, strKey, strKeyLen))
+			if (cmpStrLen == strKeyLen && !strncmp(CmpStrs + HMap->Keys[keyHash] - 1, Key, strKeyLen))
 			{
+				if (FoundIdx) *FoundIdx = keyHash;
 				return HMap->Values[keyHash];
 			}
 		}
 		++keyHash;
 	}
+}
+
+map_store MapStore(mem_pool *Pool, uint64 Capacity)
+{
+	Assert(Pool);
+	uint64 size = NextPow2(Max(Capacity, 32));
+	hash_map hmap = Map(Pool, size);
+	map_store store = {
+		hmap,
+		Buf<uint8>(Pool, size * MAX_PATH)
+	};
+
+	return store;
+}
+
+void MapStoreFree(map_store *MStore)
+{
+	Assert(MStore);
+	mem_pool *refPool = MStore->HMap.Pool;
+	MapFree(&MStore->HMap);
+	BufFree(MStore->KeyStorage);
+	MStore->KeyStorage = nullptr;
+}
+
+bool MapStoreAdd(map_store *MStore, const char *Key, void *Value)
+{
+	Assert(MStore && Key && Value);
+	bool realloced = false;
+
+	// check the map if the key already exist, if it does, just update the value
+	uint64 foundIdx = (uint64)-1;
+	uint64 oldValue = MapGetFromBytes(&MStore->HMap, Key, (const char*)MStore->KeyStorage, &foundIdx);
+	if (foundIdx != (uint64)-1)
+	{
+		MStore->HMap.Values[foundIdx] = (uint64)Value;
+	}
+	else
+	{
+		// store the string in the string array, record the index, trail with a 0 for null-terminated string
+		uint64 strLen = strlen(Key);
+		uint64 strIdx = BufSize(MStore->KeyStorage);
+		BufPushBytes(MStore->KeyStorage, (const uint8*)Key, strLen + 1);
+		MStore->KeyStorage[strIdx + strLen] = 0;
+
+		// add to hash map
+		realloced = MapAddFromBytes(&MStore->HMap, strIdx, (uint64)Value, (const char*)MStore->KeyStorage);
+	}
+
+
+	return realloced;
+}
+
+void *MapStoreGet(map_store *MStore, const char *Key)
+{
+	Assert(MStore && Key);
+	return (void*)MapGetFromBytes(&MStore->HMap, Key, (const char*)MStore->KeyStorage);
 }
 
 void ConcatStrings(path Dst, path const Str1, path const Str2)

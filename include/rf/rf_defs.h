@@ -134,14 +134,14 @@ void *_MemBufGrow(mem_pool *Pool, void *Ptr, uint64 Count, uint64 ElemSize);
 
 // Returns true if there was a memory reallocation and move of the data
 template<typename T>
-inline bool _MemBufCheckGrowth(T **b, uint64 Size)
+inline bool _MemBufCheckGrowth(T *&b, uint64 Size)
 {
-	uint64 cap = (*b) ? mem_buf__hdr(*b)->Capacity : 0;
+	uint64 cap = (b) ? mem_buf__hdr(b)->Capacity : 0;
 	if (Size > cap)
 	{
-		T *oldBuf = *b;
-		*b = (T*)_MemBufGrow(mem_buf__hdr(*b)->Pool, *b, Size, sizeof(T));
-		return oldBuf != *b;
+		T *oldBuf = b;
+		b = (T*)_MemBufGrow(mem_buf__hdr(b)->Pool, b, Size, sizeof(T));
+		return oldBuf != b;
 	}
 	return false;
 }
@@ -220,13 +220,13 @@ inline T*		BufEnd(T *b) { if (b) { return b + BufSize(b); } return nullptr; }
 // Current size of buffer doesn't matter here, and the MinCapacity is not a capacity OVER the current size, its total
 // Returns true if the buffer was resized (ie. moved in memory)
 template<typename T>
-inline bool		BufReserve(T *b, uint64 MinCapacity) { return _MemBufCheckGrowth(&b, MinCapacity); }
+inline bool		BufReserve(T *&b, uint64 MinCapacity) { return _MemBufCheckGrowth(b, MinCapacity); }
 
 // Return true if there was a reallocation
 template<typename T>
-inline bool		BufPush(T *b, T v)
+inline bool		BufPush(T *&b, T v)
 {
-	bool realloced = _MemBufCheckGrowth(&b, BufSize(b) + 1);
+	bool realloced = _MemBufCheckGrowth(b, BufSize(b) + 1);
 	b[mem_buf__hdr(b)->Size++] = v;
 	return realloced;
 }

@@ -221,6 +221,7 @@ void _MemPoolPrintStatus(mem_pool *Pool)
 	{
 		printf("no free chunks\n");
 	}
+	printf("\n");
 }
 
 real32 PoolOccupancy(mem_pool *Pool)

@@ -596,7 +596,7 @@ void *MapStoreGet(map_store *MStore, const char *Key)
 const char  *MapStoreGetKey(map_store *MStore, uint64 KeyIdx)
 {
 	Assert(MStore && KeyIdx < MStore->HMap.Capacity);
-	if (MStore->HMap.Keys[KeyIdx] != (uint64)-1)
+	if (MStore->HMap.Keys[KeyIdx] != 0)
 	{
 		return (const char *)MStore->KeyStorage + MStore->HMap.Keys[KeyIdx] - 1;
 	}

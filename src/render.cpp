@@ -45,18 +45,7 @@ void *ResourceCheckExist(render_resources *RenderResources, render_resource_type
 	resource_store *Store = GetStore(RenderResources, Type);
 	if (Store)
 	{
-#if NEW_RESOURCE_STORE
 		return MapStoreGet(Store, Filename);
-#else
-		for (uint32 i = 0; i < (Store->Keys.size()); ++i)
-		{
-			if (!strncmp(Store->Keys[i].c_str(), Filename, MAX_PATH))
-			{
-				LogDebug("Found %s, returning it", Filename);
-				return Store->Values[i];
-			}
-		}
-#endif
 	}
 
 	return NULL;
@@ -70,12 +59,7 @@ void ResourceStore(render_resources *RenderResources, render_resource_type Type,
 	if (Store)
 	{
 		LogDebug("Storing %s [%llu]", Filename, (Type == RESOURCE_IMAGE || Type == RESOURCE_TEXTURE) ? (uint64)*((uint32*)Resource) : (uint64)Resource);
-#if NEW_RESOURCE_STORE
 		MapStoreAdd(Store, Filename, Resource);
-#else
-		Store->Keys.push_back(std::string(Filename));
-		Store->Values.push_back(Resource);
-#endif
 	}
 }
 
@@ -83,7 +67,6 @@ void DestroyImage(image *Image);
 void ResourceFree(render_resources *RenderResources)
 {
 	resource_store *Store;
-#if NEW_RESOURCE_STORE
 	{
 		Store = &RenderResources->Images;
 		for (uint64 i = 0; i < Store->HMap.Capacity; ++i)
@@ -124,37 +107,6 @@ void ResourceFree(render_resources *RenderResources)
 		}
 		MapStoreFree(Store);
 	}
-#else
-	{
-		Store = &RenderResources->Images;
-		for (uint32 i = 0; i < Store->Values.size(); ++i)
-		{
-			LogDebug("Destroying image %s", Store->Keys[i].c_str());
-			DestroyImage((image*)Store->Values[i]);
-		}
-		Store->Values.clear();
-		Store->Keys.clear();
-	}
-	{
-		Store = &RenderResources->Fonts;
-		for (uint32 i = 0; i < Store->Values.size(); ++i)
-		{
-			LogDebug("Destroying font %s", Store->Keys[i].c_str());
-		}
-		Store->Values.clear();
-		Store->Keys.clear();
-	}
-	{
-		Store = &RenderResources->Textures;
-		for (uint32 i = 0; i < Store->Values.size(); ++i)
-		{
-			LogDebug("Destroying texture %s", Store->Keys[i].c_str());
-			glDeleteTextures(1, (uint32*)Store->Values[i]);
-		}
-		Store->Values.clear();
-		Store->Keys.clear();
-	}
-#endif
 }
 
 void CheckGLError(char const *Mark)

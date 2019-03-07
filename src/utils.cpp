@@ -536,7 +536,7 @@ bool MapStoreAdd(map_store *MStore, const char *Key, void *Value)
 	Assert(MStore && Key && Value);
 	bool realloced = false;
 
-#if 1 // optimized version, a bit dirtier, but avoid going twice through the O(logn) search
+	// optimized version, a bit dirtier, but avoid going twice through the O(logn) search
 	// bypass MapAddFromBytes by using MapGetFromBytes instead and modifying the memory directly there
 	// check map growth here first, since GetFromBytes doesnt.
 	if (2 * MStore->HMap.Size >= MStore->HMap.Capacity)
@@ -561,27 +561,6 @@ bool MapStoreAdd(map_store *MStore, const char *Key, void *Value)
 		MStore->HMap.Values[hashIdx] = (uint64)Value;
 		MStore->HMap.Size++;
 	}
-#else
-
-	// check the map if the key already exist, if it does, just update the value
-	uint64 foundIdx = (uint64)-1;
-	uint64 oldValue = MapGetFromBytes(&MStore->HMap, Key, (const char*)MStore->KeyStorage, &foundIdx);
-	if (foundIdx != (uint64)-1)
-	{
-		MStore->HMap.Values[foundIdx] = (uint64)Value;
-	}
-	else
-	{
-		// store the string in the string array, record the index, trail with a 0 for null-terminated string
-		uint64 strLen = strlen(Key);
-		uint64 strIdx = BufSize(MStore->KeyStorage);
-		BufPushBytes(MStore->KeyStorage, (const uint8*)Key, strLen + 1);
-		MStore->KeyStorage[strIdx + strLen] = 0;
-
-		// add to hash map
-		realloced = MapAddFromBytes(&MStore->HMap, strIdx, (uint64)Value, (const char*)MStore->KeyStorage);
-	}
-#endif
 
 	return realloced;
 }

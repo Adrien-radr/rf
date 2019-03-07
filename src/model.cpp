@@ -55,7 +55,7 @@ static size_t GetComponentSize(int ComponentType)
     }
 }
 
-bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, int AnisotropicLevel)
+bool ModelLoadGLTF(context *Context, model *Model, path const Filename, int AnisotropicLevel)
 {
     tinygltf::Model Mdl;
     tinygltf::TinyGLTF Loader;
@@ -90,10 +90,9 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
         return false;
     }
 
-
-    Model->Mesh.resize(Mdl.meshes.size());
-    Model->MaterialIdx.resize(Mdl.meshes.size());
-    Model->Material.resize(Mdl.materials.size());
+	Model->Meshes = rf::Buf<mesh>(Context->SessionPool, Mdl.meshes.size());
+	Model->MaterialIdx = rf::Buf<int>(Context->SessionPool, Mdl.meshes.size());
+	Model->Materials = rf::Buf<material>(Context->SessionPool, Mdl.materials.size());
 
     // Load Textures 
     // TODO - Load all textures first and register in a resource manager. Query it afterwards during material loading
@@ -101,10 +100,10 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
     render_resources *RenderResources = &Context->RenderResources;
 
     // Load Material
-    int iter = 0;
     for(auto const &SrcMtl : Mdl.materials)
     {
-        material &DstMtl = Model->Material[iter++];
+        //material &DstMtl = Model->Material[iter++];
+		material DstMtl;
 
         if(SrcMtl.values.size() == 0)
         { // NOTE - Default Magenta color for error
@@ -219,12 +218,12 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
                 DstMtl.EmissiveMult = vec3f(1.f);
             }
         }
+		rf::BufPush(Model->Materials, DstMtl);
     }
 
     // Load Mesh
     const Buffer &DataBuffer = Mdl.buffers[0];
 
-    iter = 0;
     for(auto const &SrcMesh : Mdl.meshes)
     {
         if(SrcMesh.primitives.size() > 1)
@@ -237,8 +236,8 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
         const Accessor &indices =  Mdl.accessors[prim.indices];
         const BufferView &indicesBV = Mdl.bufferViews[indices.bufferView];
 
-        mesh &DstMesh = Model->Mesh[iter];
-        Model->MaterialIdx[iter] = prim.material;
+		mesh DstMesh;
+		rf::BufPush(Model->MaterialIdx, prim.material);
 
         DstMesh.IndexCount = (uint32)indices.count;
         DstMesh.IndexType = (uint32)indices.componentType;
@@ -345,8 +344,7 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
 
             Attrib++;
         }
-
-        ++iter;
+		rf::BufPush(Model->Meshes, DstMesh);
     }
 
     // Retrieve mesh relative positions
@@ -356,7 +354,7 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
         if(DstMeshIdx < 0) continue;
         // TODO - handle children group
 
-        mesh &DstMesh = Model->Mesh[DstMeshIdx];
+        mesh &DstMesh = Model->Meshes[DstMeshIdx];
         DstMesh.ModelMatrix.Identity();
 
         vec3f Translation(0), Rotation(0), Scale(1);
@@ -396,8 +394,16 @@ bool ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, 
     return true;
 }
 
-void DestroyModel(model *Model)
+void ModelFree(model *Model)
 {
-    // TODO
+	Assert(Model);
+
+	for (int i = 0; i < BufSize(Model->Meshes); ++i)
+	{
+		rf::DestroyMesh(&Model->Meshes[i]);
+	}
+	rf::BufFree(Model->Materials);
+	rf::BufFree(Model->MaterialIdx);
+	rf::BufFree(Model->Meshes);
 }
 }

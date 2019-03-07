@@ -83,9 +83,9 @@ struct material
 
 struct model
 {
-    std::vector<mesh> Mesh;
-    std::vector<int> MaterialIdx;
-    std::vector<material> Material;
+	mesh	 *Meshes;
+	int		 *MaterialIdx;
+	material *Materials;
 };
 
 struct frame_buffer
@@ -170,7 +170,8 @@ void			FillUBO(size_t Offset, size_t Size, void const *Data);
 void			DestroyUBO(uint32 ID);
 
 /// Model Utilities
-bool            ResourceLoadGLTFModel(context *Context, model *Model, path const Filename, int AnisotropicLevel);
+bool            ModelLoadGLTF(context *Context, model *Model, path const Filename, int AnisotropicLevel);
+void			ModelFree(model *Model);
 
 /// Shader Utilities
 uint32          BuildShader(context *Context, char *VSPath, char *FSPath, char *GSPath = NULL, char *TESCPath = NULL, char *TESEPath = NULL);

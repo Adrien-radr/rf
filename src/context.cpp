@@ -155,6 +155,14 @@ static bool WindowResized(context *Context)
 	return false;
 }
 
+static void InitResourceMgr(context *Context)
+{
+	GetExecutablePath(Context->RenderResources.ExecutablePath);
+	Context->RenderResources.Images = MapStore(Context->SessionPool, 64);
+	Context->RenderResources.Textures = MapStore(Context->SessionPool, 64);
+	Context->RenderResources.Fonts = MapStore(Context->SessionPool, 64);
+}
+
 context *Init(context_descriptor const *Desc)
 {
 	if (!Desc)
@@ -169,9 +177,8 @@ context *Init(context_descriptor const *Desc)
 	Context->SessionPool = Desc->SessionPool;
 	Context->ScratchPool = Desc->ScratchPool;
 
-	GetExecutablePath(Context->RenderResources.ExecutablePath);
+	InitResourceMgr(Context);
 
-	// Init log
 	log::Init(Context);
 
 	GetSystemInfo(Context->SysInfo);

@@ -288,6 +288,7 @@ map_store	MapStore(mem_pool *Pool, uint64 Capacity = 0);
 void		MapStoreFree(map_store *MStore);
 bool		MapStoreAdd(map_store *MStore, const char *Key, void *Value);
 void		*MapStoreGet(map_store *MStore, const char *Key);
+const char  *MapStoreGetKey(map_store *MStore, uint64 KeyIdx);
 
 // ##########################################################################
 }

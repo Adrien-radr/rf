@@ -589,7 +589,21 @@ bool MapStoreAdd(map_store *MStore, const char *Key, void *Value)
 void *MapStoreGet(map_store *MStore, const char *Key)
 {
 	Assert(MStore && Key);
-	return (void*)MapGetFromBytes(&MStore->HMap, Key, (const char*)MStore->KeyStorage);
+	uint64 Value = MapGetFromBytes(&MStore->HMap, Key, (const char*)MStore->KeyStorage);
+	return (Value == (uint64)-1) ? nullptr : (void*)Value;
+}
+
+const char  *MapStoreGetKey(map_store *MStore, uint64 KeyIdx)
+{
+	Assert(MStore && KeyIdx < MStore->HMap.Capacity);
+	if (MStore->HMap.Keys[KeyIdx] != (uint64)-1)
+	{
+		return (const char *)MStore->KeyStorage + MStore->HMap.Keys[KeyIdx] - 1;
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
 void ConcatStrings(path Dst, path const Str1, path const Str2)

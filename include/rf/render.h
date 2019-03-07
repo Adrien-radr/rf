@@ -105,11 +105,19 @@ enum render_resource_type
     RESOURCE_COUNT
 };
 
+#define NEW_RESOURCE_STORE 1
+
+#if NEW_RESOURCE_STORE
+typedef map_store resource_store;
+#else
 struct resource_store
 {
+	//path *Keys;
     std::vector<std::string> Keys;
     std::vector<void*> Values;
 };
+#endif
+
 
 struct render_resources
 {
